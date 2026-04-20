@@ -51,8 +51,100 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
+            gap: 8px;
         }
+
+        .toolbar-left { display: flex; align-items: center; gap: 8px; }
+        .toolbar-right { display: flex; align-items: center; gap: 6px; }
+
+        .cover-title-input {
+            padding: 5px 10px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 13px;
+            width: 140px;
+            background: #fafafa;
+            transition: border-color 0.15s, background 0.15s;
+        }
+        .cover-title-input:focus { outline: none; border-color: var(--primary-blue); background: white; }
+
+        .btn-icon {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 10px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            background: white;
+            color: #444;
+            transition: background 0.15s, border-color 0.15s;
+            white-space: nowrap;
+        }
+        .btn-icon:hover { background: #f5f5f5; border-color: #ccc; }
+
+        .dropdown { position: relative; }
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            top: calc(100% + 6px);
+            right: 0;
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+            z-index: 200;
+            min-width: 160px;
+            padding: 4px 0;
+        }
+        .dropdown-menu.open { display: block; }
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            font-size: 13px;
+            color: #333;
+            cursor: pointer;
+            transition: background 0.1s;
+        }
+        .dropdown-item:hover { background: #f5f5f5; }
+        .dropdown-divider { height: 1px; background: #f0f0f0; margin: 4px 0; }
+
+        .btn-ai-icon {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            background: var(--primary-blue);
+            color: white;
+            transition: opacity 0.15s;
+        }
+        .btn-ai-icon:hover { opacity: 0.88; }
+
+        .btn-add-row {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 5px 10px;
+            border: 1px dashed #ccc;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            background: transparent;
+            color: #888;
+            transition: border-color 0.15s, color 0.15s, background 0.15s;
+        }
+        .btn-add-row:hover { border-color: var(--primary-blue); color: var(--primary-blue); background: #f0f8ff; }
 
         .table-container {
             flex-grow: 1;
@@ -158,6 +250,82 @@
             color: #ff4d4f;
             background: transparent;
         }
+
+        /* 表格行悬浮操作 */
+        tr { position: relative; }
+        tr:hover { background: #fafcff; }
+        .row-actions {
+            display: none;
+            align-items: center;
+            gap: 4px;
+        }
+        tr:hover .row-actions { display: flex; }
+        .action-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 26px;
+            height: 26px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background: transparent;
+            color: #999;
+            transition: background 0.1s, color 0.1s;
+        }
+        .action-btn:hover { background: #f0f0f0; color: #333; }
+        .action-btn.delete:hover { background: #fff0f0; color: #ff4d4f; }
+
+        /* 封面图缩略图 */
+        .cover-cell {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .cover-thumb-wrap {
+            position: relative;
+            width: 100%;
+            height: 56px;
+            border-radius: 5px;
+            overflow: hidden;
+            background: #f0f0f0;
+            cursor: pointer;
+        }
+        .cover-thumb-wrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .cover-thumb-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.35);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.15s;
+            color: white;
+            font-size: 11px;
+            gap: 3px;
+        }
+        .cover-thumb-wrap:hover .cover-thumb-overlay { opacity: 1; }
+        .cover-thumb-empty {
+            width: 100%;
+            height: 56px;
+            border-radius: 5px;
+            border: 1.5px dashed #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #bbb;
+            font-size: 11px;
+            gap: 4px;
+            transition: border-color 0.15s, color 0.15s;
+        }
+        .cover-thumb-empty:hover { border-color: var(--primary-blue); color: var(--primary-blue); }
 
         /* AI 浮层 */
         .ai-overlay {
@@ -365,14 +533,46 @@
     <!-- 上方：数据录入区 -->
     <section class="input-section">
         <div class="header-toolbar">
-            <h2 style="font-size: 18px;">宠物活动录入表格</h2>
-            <div style="display: flex; gap: 10px; align-items: center;">
-                <input type="text" id="coverTitleInput" placeholder="输入封面标题..." style="padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;" oninput="renderCards()">
-                <button class="btn btn-add" onclick="document.getElementById('excelUpload').click()">导入 Excel</button>
-                <button class="btn btn-add" onclick="document.getElementById('zipUpload').click()">上传海报 ZIP</button>
-                <button class="btn btn-add" onclick="exportToExcel()">导出 Excel</button>
-                <button class="btn btn-add" onclick="addRow()">+ 添加活动</button>
-                <button class="btn btn-ai" onclick="toggleAI()">AI 批量解析</button>
+            <div class="toolbar-left">
+                <h2 style="font-size: 15px; font-weight: 600; color: #222; white-space: nowrap;">🐾 宠物活动</h2>
+                <input type="text" id="coverTitleInput" class="cover-title-input" placeholder="封面标题..." oninput="renderCards()">
+            </div>
+            <div class="toolbar-right">
+                <!-- 导入导出下拉 -->
+                <div class="dropdown" id="importExportDropdown">
+                    <button class="btn-icon" onclick="toggleDropdown('importExportDropdown')">
+                        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 10v3.5A1.5 1.5 0 003.5 15h9a1.5 1.5 0 001.5-1.5V10M8 1v9M5 7l3 3 3-3"/></svg>
+                        导入 / 导出
+                        <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><path d="M2 3.5l3 3 3-3"/></svg>
+                    </button>
+                    <div class="dropdown-menu" id="importExportMenu">
+                        <div class="dropdown-item" onclick="document.getElementById('excelUpload').click(); closeDropdowns()">
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="1" width="12" height="14" rx="1.5"/><path d="M5 6l2 2-2 2M8 10h3"/></svg>
+                            导入 Excel
+                        </div>
+                        <div class="dropdown-item" onclick="document.getElementById('zipUpload').click(); closeDropdowns()">
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M13 6V13.5a1.5 1.5 0 01-1.5 1.5h-7A1.5 1.5 0 013 13.5V2.5A1.5 1.5 0 014.5 1H8"/><path d="M10 1v4h4"/><path d="M10 1l3 4"/></svg>
+                            上传海报 ZIP
+                        </div>
+                        <div class="dropdown-divider"></div>
+                        <div class="dropdown-item" onclick="exportToExcel(); closeDropdowns()">
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 1v9M5 7l3 3 3-3M2 13h12"/></svg>
+                            导出 Excel
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 添加活动 -->
+                <button class="btn-add-row" onclick="addRow()">
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 1v10M1 6h10"/></svg>
+                    添加活动
+                </button>
+
+                <!-- AI 解析 -->
+                <button class="btn-ai-icon" onclick="toggleAI()">
+                    <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a1 1 0 011 1v1.07A5.5 5.5 0 0113.93 8H15a1 1 0 010 2h-1.07A5.5 5.5 0 018 13.93V15a1 1 0 01-2 0v-1.07A5.5 5.5 0 012.07 10H1a1 1 0 010-2h1.07A5.5 5.5 0 016 2.07V2a1 1 0 011-1zm0 3.5a3.5 3.5 0 100 7 3.5 3.5 0 000-7zM8 7a1 1 0 110 2 1 1 0 010-2z"/></svg>
+                    AI 解析
+                </button>
             </div>
         </div>
 
@@ -419,8 +619,14 @@
     <!-- 下方：卡片预览区 -->
     <section class="preview-section">
         <div class="preview-toolbar">
-            <button class="btn btn-add" onclick="copyAllText()">复制全部文案</button>
-            <button class="btn btn-export" onclick="exportAllPNG()">导出全部 PNG</button>
+            <button class="btn-icon" onclick="copyAllText()">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="5" y="4" width="8" height="10" rx="1.5"/><path d="M3 12V3a1 1 0 011-1h7"/></svg>
+                复制文案
+            </button>
+            <button class="btn-icon" style="background:#222; color:white; border-color:#222;" onclick="exportAllPNG()">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 10v3.5A1.5 1.5 0 003.5 15h9a1.5 1.5 0 001.5-1.5V10M8 1v9M5 7l3 3 3-3"/></svg>
+                导出 PNG
+            </button>
         </div>
         <div class="cards-grid" id="cardsGrid">
             <!-- 卡片预览将由 JS 生成 -->
@@ -463,9 +669,22 @@
         // 渲染表格
         function renderTable() {
             const tbody = document.getElementById('dataTableBody');
-            tbody.innerHTML = activities.map((item, idx) => `
-                <tr data-index="${idx}">
-                    <td><div class="cell-editable" oninput="updateData(${idx}, 'index', this.innerText)">${item.index}</div></td>
+            tbody.innerHTML = activities.map((item, idx) => {
+                const coverHtml = item.cover
+                    ? `<div class="cover-thumb-wrap" onclick="triggerUpload(${idx})">
+                            <img src="${item.cover}" alt="封面">
+                            <div class="cover-thumb-overlay">
+                                <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12l4-4 3 3 3-4 4 5H2z"/><circle cx="11" cy="5" r="2"/></svg>
+                                更换
+                            </div>
+                       </div>`
+                    : `<div class="cover-thumb-empty" onclick="triggerUpload(${idx})">
+                            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M2 11l4-4 3 3 2-2 3 3"/><circle cx="11" cy="6" r="1.5"/></svg>
+                            上传图片
+                       </div>`;
+
+                return `<tr data-index="${idx}">
+                    <td style="color:#bbb; font-size:12px; text-align:center;">${item.index}</td>
                     <td><div class="cell-editable" contenteditable="true" oninput="updateData(${idx}, 'title', this.innerText)">${item.title}</div></td>
                     <td><div class="cell-editable" contenteditable="true" oninput="updateData(${idx}, 'organizer', this.innerText)">${item.organizer}</div></td>
                     <td><div class="cell-editable" contenteditable="true" oninput="updateData(${idx}, 'date', this.innerText)">${item.date}</div></td>
@@ -473,18 +692,16 @@
                     <td><div class="cell-editable" contenteditable="true" oninput="updateData(${idx}, 'description', this.innerText)">${item.description}</div></td>
                     <td><div class="cell-editable" contenteditable="true" oninput="updateData(${idx}, 'tags', this.innerText)">${item.tags}</div></td>
                     <td><div class="cell-editable" contenteditable="true" oninput="updateData(${idx}, 'signupMethod', this.innerText)">${item.signupMethod}</div></td>
+                    <td><div class="cover-cell">${coverHtml}</div></td>
                     <td>
-                        <div class="cover-cell">
-                            <img class="cover-preview" src="${item.cover || 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='}" 
-                                 onclick="triggerUpload(${idx})" title="点击上传图片">
-                            <input type="text" placeholder="或输入 URL" style="width:100%; font-size:10px;" 
-                                   value="${item.cover.startsWith('data:') ? '' : item.cover}"
-                                   oninput="updateData(${idx}, 'cover', this.value)">
+                        <div class="row-actions">
+                            <button class="action-btn delete" onclick="deleteRow(${idx})" title="删除">
+                                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 5h10M6 5V3h4v2M6 8v5M10 8v5M4 5l1 8h6l1-8"/></svg>
+                            </button>
                         </div>
                     </td>
-                    <td><button class="btn btn-delete" onclick="deleteRow(${idx})">删除</button></td>
-                </tr>
-            `).join('');
+                </tr>`;
+            }).join('');
         }
 
         // 更新数据并同步预览
@@ -602,49 +819,47 @@
         function renderCards() {
             const grid = document.getElementById('cardsGrid');
             grid.innerHTML = '';
-
-            const BG_STYLE = 'position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:0;pointer-events:none;';
-
+            
             // 1. 添加封面卡片
             const coverCard = document.createElement('div');
             coverCard.className = 'card-container card-cover';
-            const coverBg = document.createElement('img');
-            coverBg.src = '/img/cover-bg.png';
-            coverBg.style.cssText = BG_STYLE;
-            coverCard.appendChild(coverBg);
-            const coverTitle = document.getElementById('coverTitleInput').value || '2026年4月';
-            const coverTitleEl = document.createElement('div');
-            coverTitleEl.className = 'cover-title-text';
-            coverTitleEl.textContent = coverTitle;
-            coverCard.appendChild(coverTitleEl);
-            grid.appendChild(coverCard); // ✅ 修复：加入 grid
+const coverBg = document.createElement('img');
+coverBg.src = '/img/cover-bg.png';
+coverBg.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:0;pointer-events:none;';
+coverCard.appendChild(coverBg);
 
             // 过滤掉完全没填内容的行
             const validData = activities.filter(a => a.title || a.date || a.location);
-
+            
             // 2. 添加活动内容卡片
             for (let i = 0; i < validData.length; i += 2) {
                 const card = document.createElement('div');
                 card.className = 'card-container';
+
+                // ✅ 用 img 标签替代 CSS background-image
                 const bgImg = document.createElement('img');
-                bgImg.style.cssText = BG_STYLE;
+                bgImg.className = 'card-bg-img';
                 bgImg.src = '/img/bg.png';
                 card.appendChild(bgImg);
+
+                                
+
                 card.appendChild(createActivityBlock(validData[i], 1));
                 if (validData[i+1]) {
                     card.appendChild(createActivityBlock(validData[i+1], 2));
                 }
+                
                 grid.appendChild(card);
             }
 
             // 3. 添加结尾卡片
-            const endCard = document.createElement('div');
-            endCard.className = 'card-container card-end';
-            const endBg = document.createElement('img');
-            endBg.src = '/img/last.png';
-            endBg.style.cssText = BG_STYLE;
-            endCard.appendChild(endBg);
-            grid.appendChild(endCard); // ✅ 修复：加入 grid
+const endCard = document.createElement('div');
+endCard.className = 'card-container card-end';
+const endBg = document.createElement('img');
+endBg.src = '/img/last.png';
+endBg.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:0;pointer-events:none;';
+endCard.appendChild(endBg);
+
         }
 
         function createActivityBlock(item, pos) {
@@ -870,6 +1085,20 @@
                 input.value = ""; // 清空 input
             }
         }
+
+        // 下拉菜单控制
+        function toggleDropdown(id) {
+            const menu = document.getElementById(id).querySelector('.dropdown-menu');
+            const isOpen = menu.classList.contains('open');
+            closeDropdowns();
+            if (!isOpen) menu.classList.add('open');
+        }
+        function closeDropdowns() {
+            document.querySelectorAll('.dropdown-menu').forEach(m => m.classList.remove('open'));
+        }
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.dropdown')) closeDropdowns();
+        });
 
         // 启动
         initData();
