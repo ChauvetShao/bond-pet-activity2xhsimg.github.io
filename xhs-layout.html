@@ -431,6 +431,7 @@ html,body{height:100%;overflow:hidden;background:var(--very-light-yellow);color:
   <div class="topbar-sep"></div>
   <span class="topbar-title">小红书 · 公众号模块化排版工具</span>
   <div class="topbar-actions">
+    <button class="btn btn-ghost" onclick="showAIModal()">✨ AI 排版</button>
     <button class="btn btn-ghost" onclick="saveDraft()">💾 保存草稿</button>
     <label class="btn btn-ghost" style="cursor:pointer">📂 载入草稿<input type="file" accept=".json" onchange="loadDraft(event)" style="display:none"/></label>
     <button class="btn btn-coral" onclick="showExportModal()">📤 导出</button>
@@ -537,11 +538,30 @@ html,body{height:100%;overflow:hidden;background:var(--very-light-yellow);color:
   </div>
 </div>
 
+<!-- AI LAYOUT MODAL -->
+<div class="modal-overlay" id="ai-modal">
+  <div class="modal">
+    <div class="modal-title">AI 排版助手</div>
+    <div class="prop-section">
+      <div class="prop-label">文章内容</div>
+      <textarea class="prop-input" id="ai-input" placeholder="粘贴文章原文…" style="height:200px; resize:vertical;"></textarea>
+    </div>
+    <div class="prop-section" style="margin-top:12px;">
+      <div class="prop-label">API Key</div>
+      <input class="prop-input" type="password" id="ai-key" placeholder="智谱 AI API Key"/>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeAIModal()">取消</button>
+      <button class="btn btn-primary" id="ai-start-btn" onclick="startAILayout()">开始排版</button>
+    </div>
+  </div>
+</div>
+
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
 <!-- MEASURE CONTAINER (Hidden) -->
-<div id="measure-container" style="position:absolute;top:-9999px;left:-9999px;width:375px;visibility:hidden;pointer-events:none;"></div>
+<div id="measure-container" style="position:absolute;top:-9999px;left:-9999px;width:600px;visibility:hidden;pointer-events:none;"></div>
 
 <script>
 // ═══════════════════════════════
@@ -554,7 +574,7 @@ let state = {
   reflowing: false,
 };
 
-const CANVAS_HEIGHT = 501;
+const CANVAS_HEIGHT = 800;
 
 // ═══════════════════════════════
 //  INIT
@@ -1194,7 +1214,7 @@ async function exportCanvasPNG(ci){
   toast('⏳ 正在导出…');
   try{
     const canvas = await html2canvas(frame,{
-      scale: 3.312, // 375*3.312 ≈ 1242px
+      scale: 2.07, // 600*2.07 ≈ 1242px
       useCORS: true,
       backgroundColor: '#ffffff',
       logging: false,
@@ -1238,14 +1258,14 @@ function inlineModuleHTML(mod){
 function inlineCover(m){
   const bg = m.bgImage
     ? `background-image:url('${m.bgImage}');background-size:cover;background-position:center;`
-    : `background:${m.bgColor||'#42aadf'};`;
-  return `<div style="position:relative;width:100%;padding-bottom:133%;${bg}overflow:hidden;">
-    ${m.bgImage?`<div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.55) 0%,transparent 60%);"></div>`:''}
-    ${m.showLogo?`<div style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,.25);color:white;font-size:11px;font-weight:600;padding:4px 10px;border-radius:100px;letter-spacing:.04em;">BOND</div>`:''}
-    <div style="position:absolute;bottom:0;left:0;right:0;padding:32px 24px;text-align:center;">
-      ${m.tag?`<div style="display:inline-block;background:rgba(255,255,255,.2);color:white;font-size:11px;padding:4px 12px;border-radius:100px;margin-bottom:12px;letter-spacing:.06em;">${m.tag}</div><br/>`:''}
-      <div style="color:white;font-size:26px;font-weight:700;line-height:1.2;margin-bottom:6px;">${m.title||'标题'}</div>
-      ${m.subtitle?`<div style="color:rgba(255,255,255,.8);font-size:13px;line-height:1.5;">${m.subtitle}</div>`:''}
+    : `background:linear-gradient(135deg,#42aadf 0%,#97d9f9 100%);`;
+  return `<div style="position:relative;width:100%;padding-bottom:133.33%;${bg}overflow:hidden;">
+    ${m.bgImage?`<div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.55) 0%,rgba(0,0,0,.1) 60%,transparent 100%);"></div>`:''}
+    ${m.showLogo?`<div style="position:absolute;top:16px;right:16px;z-index:2;background:rgba(255,255,255,.25);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:white;font-size:11px;font-weight:600;padding:4px 10px;border-radius:100px;letter-spacing:.04em;">BOND</div>`:''}
+    <div style="position:absolute;bottom:0;left:0;right:0;padding:32px 24px;text-align:center;z-index:1;">
+      ${m.tag?`<div style="display:inline-block;background:rgba(255,255,255,.2);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:white;font-size:13px;padding:4px 12px;border-radius:100px;margin-bottom:12px;letter-spacing:.06em;">${m.tag}</div><br/>`:''}
+      <div style="color:white;font-size:48px;font-weight:700;line-height:1.2;margin-bottom:6px;font-family:'Noto Sans SC',sans-serif;">${m.title||'标题'}</div>
+      ${m.subtitle?`<div style="color:rgba(255,255,255,.8);font-size:18px;line-height:1.5;">${m.subtitle}</div>`:''}
     </div>
   </div>`;
 }
@@ -1255,15 +1275,17 @@ function inlineImgText(m){
     return `<div style="padding:20px;display:flex;gap:14px;align-items:flex-start;">
       ${m.image?`<div style="width:44%;flex-shrink:0;"><img src="${m.image}" style="width:100%;border-radius:8px;display:block;" alt=""/></div>`:''}
       <div style="flex:1;">
-        ${m.title?`<div style="font-size:15px;font-weight:700;color:#1d2129;margin-bottom:6px;">${m.title}</div>`:''}
-        <div style="font-size:13px;color:#86909c;line-height:1.7;">${m.body||''}</div>
+        ${m.title?`<div style="font-size:20px;font-weight:700;color:#1d2129;margin-bottom:6px;font-family:'Noto Sans SC',sans-serif;">${m.title}</div>`:''}
+        <div style="font-size:15px;color:#2e2e2e;line-height:1.7;">${m.body||''}</div>
       </div>
     </div>`;
   }
-  return `<div style="padding:20px;">
-    ${m.image?`<img src="${m.image}" style="width:100%;border-radius:8px;display:block;margin-bottom:14px;" alt=""/>`:''}
-    ${m.title?`<div style="font-size:15px;font-weight:700;color:#1d2129;margin-bottom:6px;">${m.title}</div>`:''}
-    <div style="font-size:13px;color:#86909c;line-height:1.7;">${m.body||''}</div>
+  return `<div style="padding:20px;display:flex;flex-direction:column;gap:14px;">
+    ${m.image?`<img src="${m.image}" style="width:100%;border-radius:8px;display:block;" alt=""/>`:''}
+    <div style="width:100%;">
+      ${m.title?`<div style="font-size:20px;font-weight:700;color:#1d2129;margin-bottom:6px;font-family:'Noto Sans SC',sans-serif;">${m.title}</div>`:''}
+      <div style="font-size:15px;color:#2e2e2e;line-height:1.7;">${m.body||''}</div>
+    </div>
   </div>`;
 }
 
@@ -1272,13 +1294,13 @@ function inlineText(m){
     normal: 'padding:20px 24px;',
     title: 'padding:24px 24px 8px;',
     quote: 'padding:20px 20px 20px 28px;border-left:4px solid #42aadf;background:#e2f4fe;',
-    highlight: 'padding:18px 20px;background:#fff4ae;',
+    highlight: 'padding:18px 20px;background:#fffceb;',
   };
   const contentStyles = {
-    normal: 'font-size:13.5px;line-height:1.75;color:#86909c;',
-    title: 'font-size:19px;font-weight:700;color:#1d2129;line-height:1.3;',
-    quote: 'font-size:13.5px;line-height:1.75;color:#42aadf;font-style:italic;',
-    highlight: 'font-size:13.5px;line-height:1.75;color:#86909c;',
+    normal: "font-size:15px;line-height:1.8;color:#2e2e2e;font-family:'DM Sans','Noto Sans SC',sans-serif;",
+    title: "font-size:36px;font-weight:700;color:#1d2129;line-height:1.3;font-family:'Noto Sans SC',sans-serif;",
+    quote: "font-size:15px;line-height:1.8;color:#42aadf;font-style:italic;font-family:'DM Sans','Noto Sans SC',sans-serif;",
+    highlight: "font-size:15px;line-height:1.8;color:#2e2e2e;font-family:'DM Sans','Noto Sans SC',sans-serif;",
   };
   const s = m.style||'normal';
   return `<div style="${styles[s]||styles.normal}"><div style="${contentStyles[s]||contentStyles.normal}">${m.content||''}</div></div>`;
@@ -1286,19 +1308,19 @@ function inlineText(m){
 
 function inlineEvent(m){
   return `<div style="padding:16px 20px;">
-    <div style="background:linear-gradient(135deg,#e2f4fe 0%,#ffffff 100%);border:1.5px solid #42aadf;border-radius:12px;overflow:hidden;">
+    <div style="background:linear-gradient(135deg,#e2f4fe 0%,#ffffff 100%);border:1.5px solid #42aadf;border-radius:12px;overflow:hidden;box-sizing:border-box;">
       <div style="background:#42aadf;padding:14px 18px;display:flex;align-items:center;gap:10px;">
         <span style="font-size:20px;">🐾</span>
         <div>
-          <div style="color:white;font-size:15px;font-weight:700;">${m.name||'活动名称'}</div>
+          <div style="color:white;font-size:15px;font-weight:700;font-family:'Noto Sans SC',sans-serif;">${m.name||'活动名称'}</div>
           ${m.tag?`<div style="color:rgba(255,255,255,.8);font-size:11px;margin-top:2px;">${m.tag}</div>`:''}
         </div>
       </div>
       <div style="padding:16px 18px;">
-        ${m.time?`<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;"><span style="font-size:15px;">🕐</span><div><div style="font-size:11px;color:#42aadf;font-weight:600;margin-bottom:2px;">时间</div><div style="font-size:12.5px;color:#86909c;">${m.time}</div></div></div>`:''}
-        ${m.location?`<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;"><span style="font-size:15px;">📍</span><div><div style="font-size:11px;color:#42aadf;font-weight:600;margin-bottom:2px;">地点</div><div style="font-size:12.5px;color:#86909c;">${m.location}</div></div></div>`:''}
-        ${m.price?`<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;"><span style="font-size:15px;">💰</span><div><div style="font-size:11px;color:#42aadf;font-weight:600;margin-bottom:2px;">费用</div><div style="font-size:12.5px;color:#86909c;">${m.price}</div></div></div>`:''}
-        ${m.contact?`<div style="display:flex;align-items:flex-start;gap:10px;"><span style="font-size:15px;">📱</span><div><div style="font-size:11px;color:#42aadf;font-weight:600;margin-bottom:2px;">报名</div><div style="font-size:12.5px;color:#86909c;">${m.contact}</div></div></div>`:''}
+        ${m.time?`<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;"><span style="font-size:15px;">🕐</span><div style="flex:1;"><div style="font-size:11px;color:#42aadf;font-weight:600;margin-bottom:2px;text-transform:uppercase;letter-spacing:0.06em;">时间</div><div style="font-size:12.5px;color:#2e2e2e;line-height:1.5;">${m.time}</div></div></div>`:''}
+        ${m.location?`<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;"><span style="font-size:15px;">📍</span><div style="flex:1;"><div style="font-size:11px;color:#42aadf;font-weight:600;margin-bottom:2px;text-transform:uppercase;letter-spacing:0.06em;">地点</div><div style="font-size:12.5px;color:#2e2e2e;line-height:1.5;">${m.location}</div></div></div>`:''}
+        ${m.price?`<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;"><span style="font-size:15px;">💰</span><div style="flex:1;"><div style="font-size:11px;color:#42aadf;font-weight:600;margin-bottom:2px;text-transform:uppercase;letter-spacing:0.06em;">费用</div><div style="font-size:12.5px;color:#2e2e2e;line-height:1.5;">${m.price}</div></div></div>`:''}
+        ${m.contact?`<div style="display:flex;align-items:flex-start;gap:10px;"><span style="font-size:15px;">📱</span><div style="flex:1;"><div style="font-size:11px;color:#42aadf;font-weight:600;margin-bottom:2px;text-transform:uppercase;letter-spacing:0.06em;">报名</div><div style="font-size:12.5px;color:#2e2e2e;line-height:1.5;">${m.contact}</div></div></div>`:''}
       </div>
       <div style="padding:0 18px 16px;display:flex;gap:8px;">
         ${m.btnPrimary?`<div style="flex:1;padding:10px;background:#42aadf;color:white;border-radius:8px;text-align:center;font-size:12.5px;font-weight:600;">${m.btnPrimary}</div>`:''}
@@ -1312,7 +1334,7 @@ function inlineDivider(m){
   const lineStyle = m.style==='thick'?'height:3px;background:#42aadf;border-radius:2px;':m.style==='dots'?'height:0;border-top:2px dashed #c9cdd4;':'height:1px;background:#c9cdd4;';
   return `<div style="padding:12px 24px;display:flex;align-items:center;justify-content:center;gap:12px;">
     <div style="flex:1;${lineStyle}"></div>
-    ${m.icon?`<span style="font-size:16px;color:#86909c;">${m.icon}</span>`:''}
+    ${m.icon?`<span style="font-size:16px;color:#2e2e2e;">${m.icon}</span>`:''}
     <div style="flex:1;${lineStyle}"></div>
   </div>`;
 }
@@ -1320,26 +1342,26 @@ function inlineDivider(m){
 function inlineTable(m){
   if(!m.headers||!m.rows) return '';
   return `<div style="padding:16px 20px;overflow-x:auto;">
-    <table style="width:100%;border-collapse:collapse;font-size:12.5px;">
-      <thead><tr>${m.headers.map((h,i)=>`<th style="background:#42aadf;color:white;padding:9px 12px;text-align:left;font-weight:600;font-size:12px;${i===0?'border-radius:8px 0 0 0;':i===m.headers.length-1?'border-radius:0 8px 0 0;':''}">${h}</th>`).join('')}</tr></thead>
-      <tbody>${m.rows.map((row,ri)=>`<tr>${row.map(c=>`<td style="padding:8px 12px;border-bottom:1px solid #c9cdd4;color:#86909c;line-height:1.5;${ri%2===1?'background:rgba(66,170,223,.04);':''}">${c}</td>`).join('')}</tr>`).join('')}</tbody>
+    <table style="width:100%;border-collapse:collapse;font-size:12.5px;border:2px solid #42aadf;border-radius:8px;overflow:hidden;">
+      <thead><tr>${m.headers.map((h,i)=>`<th style="background:#42aadf;color:white;padding:9px 12px;text-align:left;font-weight:600;font-size:12px;">${h}</th>`).join('')}</tr></thead>
+      <tbody>${m.rows.map((row,ri)=>`<tr>${row.map(c=>`<td style="padding:8px 12px;border-bottom:1px solid #fff4ae;color:#2e2e2e;line-height:1.5;${ri%2===1?'background:#fffceb;':''}">${c}</td>`).join('')}</tr>`).join('')}</tbody>
     </table>
   </div>`;
 }
 
 function inlineChecklist(m){
-  const colors = ['#42aadf','#f35d55','#97d9f9','#ff8800','#ffde00','#86909c'];
+  const colors = ['#42aadf','#f35d55','#97d9f9','#ff8800','#ffde00','#2e2e2e'];
   const bulletMap = {number: i=>i+1, check: ()=>'✓', star: ()=>'★'};
   const bullet = bulletMap[m.style||'number'];
   return `<div style="padding:16px 20px;">
     ${m.title?`<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
       <span style="font-size:20px;">${m.style==='check'?'✅':m.style==='star'?'⭐':'📋'}</span>
-      <div style="font-size:15px;font-weight:700;color:#1d2129;">${m.title}</div>
+      <div style="font-size:15px;font-weight:700;color:#1d2129;font-family:'Noto Sans SC',sans-serif;">${m.title}</div>
     </div>`:''}
     ${(m.items||[]).map((item,i)=>`
       <div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid #c9cdd4;">
         <div style="width:22px;height:22px;border-radius:50%;background:${colors[i%colors.length]};display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:white;flex-shrink:0;margin-top:1px;">${bullet(i)}</div>
-        <div style="font-size:13px;color:#86909c;line-height:1.8;flex:1;">${item.text||''}</div>
+        <div style="font-size:15px;color:#2e2e2e;line-height:1.8;flex:1;">${item.text||''}</div>
       </div>
     `).join('')}
   </div>`;
@@ -1347,10 +1369,10 @@ function inlineChecklist(m){
 
 function inlineCta(m){
   return `<div style="padding:20px;">
-    <div style="border-radius:12px;padding:20px;text-align:center;background:linear-gradient(135deg,#fff4ae 0%,#fffceb 100%);border:1.5px solid #ff8800;">
+    <div style="border-radius:12px;padding:20px;text-align:center;background:linear-gradient(135deg,#fffceb 0%,#fffceb 100%);border:1.5px solid #ff8800;">
       ${m.emoji?`<div style="font-size:28px;margin-bottom:8px;">${m.emoji}</div>`:''}
-      ${m.title?`<div style="font-size:15px;font-weight:700;color:#1d2129;margin-bottom:6px;">${m.title}</div>`:''}
-      ${m.body?`<div style="font-size:13px;color:#86909c;line-height:1.7;margin-bottom:14px;">${m.body}</div>`:''}
+      ${m.title?`<div style="font-size:15px;font-weight:700;color:#1d2129;margin-bottom:6px;font-family:'Noto Sans SC',sans-serif;">${m.title}</div>`:''}
+      ${m.body?`<div style="font-size:13px;color:#2e2e2e;line-height:1.7;margin-bottom:14px;">${m.body}</div>`:''}
       ${m.tags&&m.tags.length?`<div style="display:flex;flex-wrap:wrap;justify-content:center;gap:6px;">${m.tags.map(t=>`<span style="padding:5px 12px;border-radius:100px;font-size:12px;font-weight:500;background:white;border:1.5px solid #f35d55;color:#f35d55;">${t}</span>`).join('')}</div>`:''}
     </div>
   </div>`;
@@ -1382,6 +1404,200 @@ function copyHTMLCode(){
 }
 
 document.getElementById('html-modal').addEventListener('click', e=>{ if(e.target===e.currentTarget) closeModal(); });
+
+// ═══════════════════════════════
+//  AI LAYOUT
+// ═══════════════════════════════
+function showAIModal(){
+  document.getElementById('ai-modal').classList.add('show');
+}
+
+function closeAIModal(){
+  document.getElementById('ai-modal').classList.remove('show');
+  document.getElementById('ai-input').value = '';
+  document.getElementById('ai-key').value = '';
+}
+
+document.getElementById('ai-modal').addEventListener('click', e=>{ if(e.target===e.currentTarget) closeAIModal(); });
+
+async function startAILayout(){
+  const content = document.getElementById('ai-input').value.trim();
+  const apiKey = document.getElementById('ai-key').value.trim();
+  const btn = document.getElementById('ai-start-btn');
+
+  if(!content){ toast('⚠️ 请输入文章内容'); return; }
+  if(!apiKey){ toast('⚠️ 请输入 API Key'); return; }
+
+  btn.disabled = true;
+  btn.textContent = 'AI 排版中...';
+
+const systemPrompt = `你是一个小红书图文排版助手。请将用户提供的文章拆分为多张画布，输出严格合法的 JSON 数组，不要输出任何其他内容，不要加 markdown 代码块。
+
+【第一步：判断文章类型】
+在拆分前，先判断文章属于哪种类型：
+
+A. 长文/深度内容（800字以上，有多个子主题）
+   → 拆分为 3-7 张画布，每张聚焦一个子主题
+
+B. 短文/情感向内容（800字以下，或结构扁平、情绪单一）
+   → 只输出 1 张画布，模块按文章段落顺序排列
+   → 不强行拆分，保留原文节奏感
+
+C. 列举型内容（清单、行为大赏、打卡攻略等）
+   → 1-2 张画布，核心内容用 checklist 模块承载
+
+判断完成后，按对应规则 continue 执行。
+
+JSON 格式：
+[{"name":"画布名","modules":[...]}]
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+【可用模块类型及字段说明】
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. cover（封面）——只用一次，放第一张画布第一个
+{"type":"cover","bgColor":"#42AADF","bgImage":"","tag":"🐾 BOND","title":"主标题（10字内，吸睛）","subtitle":"副标题（补充说明）","showLogo":true}
+
+2. text（文字模块）——style 决定视觉层级，必须根据内容语义选择：
+  - style="title"：用于每张画布的第一个模块，作为该画布的大标题，字号最大，12字以内
+  - style="normal"：用于正文段落，每段不超过80字，超过则拆成多个 normal 模块
+  - style="quote"：用于金句、引用、他人原话、数据结论等需要强调的单句
+  - style="highlight"：用于补充说明、背景知识、注意事项等次要信息
+{"type":"text","style":"title|normal|quote|highlight","content":"内容，可用<strong>加粗关键词</strong>"}
+
+3. imgtext（图文模块）——需要配图时使用
+{"type":"imgtext","layout":"top|left","image":"","imagePrompt":"描述图片内容的中文提示词，风格统一为：温暖插画风，BOND宠物品牌调性，暖色系","title":"小标题","body":"配图说明文字"}
+  - layout="top"：图上文下，适合竖版配图
+  - layout="left"：图左文右，适合横版配图或信息密度高时
+
+4. checklist（清单）——用于行动指南、步骤、注意事项等列举型内容
+{"type":"checklist","style":"number|check|star","title":"清单标题","items":[{"text":"条目内容，可用<strong>加粗重点</strong>"}]}
+  - style="number"：步骤类（第1步、第2步）
+  - style="check"：待办/建议类
+  - style="star"：亮点/推荐类
+
+5. table（表格）——用于多维度对比、政策/价格/参数横向比较
+{"type":"table","headers":["列标题1","列标题2","列标题3"],"rows":[["行1列1","行1列2","行1列3"]]}
+
+6. divider（分隔）——用于画布内两个主题之间的视觉过渡，不要滥用
+{"type":"divider","style":"line|thick|dots","icon":"🐾"}
+  - style="line"：细线，轻量分隔
+  - style="thick"：粗线品牌色，强分隔
+  - style="dots"：虚线，柔和分隔
+
+7. cta（互动引导）——只用一次，放最后一张画布最后一个
+{"type":"cta","emoji":"💬","title":"互动标题","body":"引导读者评论的文字，口语化，提出一个具体问题","tags":["#话题标签1","#话题标签2","#话题标签3"]}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+【排版节奏规则】
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+每张画布结构模板（按顺序）：
+  ① text(title) ← 画布大标题，必须有
+  ② 内容模块 × 2-4个（normal / quote / highlight / checklist / table / imgtext）
+  ③ divider ← 可选，内容主题切换时用
+
+全文画布数量：3-7张，每张聚焦一个子主题。
+
+严格禁止：
+- 连续出现两个 text(title)
+- 单张画布超过6个模块
+- cover 或 cta 出现多次
+- normal 模块内容超过100字（超过必须拆分）
+- 使用 imgtext 时，image 字段必须保持为空字符串，所有图片描述必须填在 imagePrompt 中`;
+  try {
+    const response = await fetch('https://open.bigmodel.cn/api/paas/v4/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'glm-4',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: content }
+        ],
+        max_tokens: 4096
+      })
+    });
+
+    if (!response.ok) {
+      const errData = await response.json();
+      throw new Error(errData.error?.message || '请求失败');
+    }
+
+    const data = await response.json();
+    const aiText = data.choices[0].message.content;
+    
+    // Clean potential markdown wrappers if AI didn't follow instructions perfectly
+    const cleanJson = aiText.replace(/^```json/, '').replace(/```$/, '').trim();
+    const result = JSON.parse(cleanJson);
+
+    if (Array.isArray(result)) {
+      // Find all image prompts
+      let imageModules = [];
+      result.forEach(canvas => {
+        canvas.modules.forEach(mod => {
+          if (mod.type === 'imgtext' && mod.imagePrompt) {
+            imageModules.push(mod);
+          }
+        });
+      });
+
+      // Generate images sequentially
+      for (let i = 0; i < imageModules.length; i++) {
+        const mod = imageModules[i];
+        btn.textContent = `✨ AI 排版中…（正在生成配图 ${i + 1}/${imageModules.length}）`;
+        
+        try {
+          const imgResponse = await fetch('https://open.bigmodel.cn/api/paas/v4/images/generations', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+              model: 'cogview-3',
+              prompt: mod.imagePrompt
+            })
+          });
+
+          if (imgResponse.ok) {
+            const imgData = await imgResponse.json();
+            mod.image = imgData.data[0].url;
+            delete mod.imagePrompt;
+          } else {
+            console.warn('Image generation failed for:', mod.imagePrompt);
+            delete mod.imagePrompt;
+          }
+        } catch (e) {
+          console.error('Image Gen Error:', e);
+          delete mod.imagePrompt;
+        }
+      }
+
+      state.canvases = result;
+      state.activeCanvas = 0;
+      state.selectedModule = null;
+      
+      renderCanvasList();
+      renderCanvasArea();
+      renderProps();
+      closeAIModal();
+      toast(`✨ AI 排版完成，共生成 ${result.length} 张画布`);
+    } else {
+      throw new Error('AI 返回格式错误');
+    }
+
+  } catch (error) {
+    console.error('AI Error:', error);
+    toast(`❌ AI 排版失败：${error.message}`);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '开始排版';
+  }
+}
 
 // ═══════════════════════════════
 //  DRAFT SAVE / LOAD
