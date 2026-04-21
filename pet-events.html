@@ -834,8 +834,32 @@
                 const data = await response.json();
                 if (!response.ok) throw new Error(data.error?.message || '请求失败');
 
-                let content = data.choices[0].message.content.replace(/```json/g, '').replace(/```/g, '').trim();
-                const newActivities = JSON.parse(content);
+                let aiText = data.choices[0].message.content.trim();
+                
+                // Robust extraction: find the first '[' and last ']'
+                let cleanJson = aiText;
+                const startIdx = cleanJson.indexOf('[');
+                const endIdx = cleanJson.lastIndexOf(']');
+                if (startIdx !== -1 && endIdx !== -1) {
+                    cleanJson = cleanJson.substring(startIdx, endIdx + 1);
+                } else {
+                    cleanJson = cleanJson.replace(/```json\s?/, '').replace(/```/, '').trim();
+                }
+
+                let newActivities;
+                try {
+                    newActivities = JSON.parse(cleanJson);
+                } catch (e) {
+                    try {
+                        // Attempt to fix trailing commas and missing property quotes
+                        let fixedJson = cleanJson.replace(/,\s*([\]}])/g, '$1');
+                        fixedJson = fixedJson.replace(/([{,\s])([a-zA-Z0-9_]+)":/g, '$1"$2":');
+                        newActivities = JSON.parse(fixedJson);
+                    } catch (e2) {
+                        console.error('JSON Parse Error:', aiText);
+                        throw new Error('AI 返回的活动列表格式不正确，解析失败。');
+                    }
+                }
                 
                 // 填入表格（清空或追加，这里选择追加）
                 activities = activities.filter(a => a.title || a.date); // 先清除纯空行

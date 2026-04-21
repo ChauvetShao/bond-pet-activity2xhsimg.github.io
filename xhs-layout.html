@@ -227,7 +227,7 @@ html,body{height:100%;overflow:hidden;background:var(--very-light-yellow);color:
 /* The actual canvas: 1242x1660 scaled to fit screen */
 .canvas-frame{
   width:600px; /* display width */
-  height:800px; /* 1660 / 3.312 ≈ 501.2px */
+  height: 800px;
   background:white;
   border-radius: 2px;
   box-shadow:0 8px 40px rgba(66,170,223,0.2);
@@ -238,8 +238,18 @@ html,body{height:100%;overflow:hidden;background:var(--very-light-yellow);color:
   box-shadow:0 0 0 3px var(--theme-blue),0 8px 40px rgba(66,170,223,.2);
 }
 
+/* Watermark */
+
+.canvas-watermark{
+  position:absolute;bottom:12px;left:14px;right:14px;z-index:100;
+  display:flex;justify-content:space-between;align-items:flex-end;
+  pointer-events:none;opacity:0.8;
+}
+.watermark-logo{height:16px;display:block}
+.watermark-tag{font-size:10px;color:var(--theme-blue);font-weight:600;letter-spacing:0.02em}
+
 /* modules inside canvas */
-.canvas-modules{display:flex;flex-direction:column;height:100%;position:relative}
+.canvas-modules{display:flex;flex-direction:column;min-height:500px;position:relative}
 .canvas-empty-hint{
   height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;
   padding:40px 24px;color:var(--gray);font-size:13px;text-align:center;gap:8px;
@@ -276,9 +286,9 @@ html,body{height:100%;overflow:hidden;background:var(--very-light-yellow);color:
 .mod-cover-content{position:relative;z-index:1;text-align:center;width:100%}
 .mod-cover-tag{
   display:inline-block;background:var(--white-overlay);backdrop-filter:blur(8px);
-  color:white;font-size:13px;padding:4px 12px;border-radius:100px;margin-bottom:12px;letter-spacing:.06em;
+  color:white;font-size:13px;padding:4px 12px;border-radius:100px;margin-bottom:40px;letter-spacing:.06em;
 }
-.mod-cover-title{color:white;font-size:48px;font-weight:700;line-height:1.2;margin-bottom:6px;font-family:'Noto Sans SC',sans-serif}
+.mod-cover-title{color:white;font-size:84px;font-weight:700;line-height:1.2;margin-bottom:60px;font-family:'Noto Sans SC',sans-serif}
 .mod-cover-subtitle{color:rgba(255,255,255,.8);font-size:18px;line-height:1.5}
 .mod-cover-logo{
   position:absolute;top:16px;right:16px;z-index:2;
@@ -389,6 +399,40 @@ html,body{height:100%;overflow:hidden;background:var(--very-light-yellow);color:
   background:white;border:1.5px solid var(--pink);color:var(--pink);
 }
 
+/* IMAGE MODULE */ 
+.mod-image { padding: 0; position: relative; } 
+.mod-image.has-padding { padding: 12px 20px; } 
+.mod-image-placeholder { 
+  min-height: 180px; background: var(--very-light-yellow); 
+  display: flex; flex-direction: column; align-items: center; 
+  justify-content: center; gap: 10px; cursor: pointer; 
+  color: var(--gray); font-size: 13px; 
+} 
+.mod-image-placeholder .ph-icon { font-size: 28px; opacity: .5; } 
+.mod-image img { 
+  width: 100%; 
+  height: auto; 
+  display: block; 
+} 
+.mod-image.has-radius img { border-radius: var(--r); } 
+.mod-image-caption { 
+  padding: 8px 20px 12px; 
+  font-size: 12px; color: var(--gray); 
+  text-align: center; line-height: 1.5; 
+} 
+.img-gen-loading { 
+  min-height: 180px; background: var(--light-blue); 
+  display: flex; flex-direction: column; align-items: center; 
+  justify-content: center; gap: 8px; 
+  font-size: 13px; color: var(--black); 
+} 
+.img-gen-loading .spin { 
+  width: 24px; height: 24px; border: 2px solid var(--theme-blue); 
+  border-top-color: transparent; border-radius: 50%; 
+  animation: spin .8s linear infinite; 
+} 
+@keyframes spin { to { transform: rotate(360deg); } } 
+
 /* drag ghost */
 .drag-ghost{opacity:.4}
 
@@ -431,7 +475,7 @@ html,body{height:100%;overflow:hidden;background:var(--very-light-yellow);color:
   <div class="topbar-sep"></div>
   <span class="topbar-title">小红书 · 公众号模块化排版工具</span>
   <div class="topbar-actions">
-    <button class="btn btn-ghost" onclick="showAIModal()">✨ AI 排版</button>
+    <button class="btn btn-primary" onclick="showAIModal()">✨ AI 排版</button>
     <button class="btn btn-ghost" onclick="saveDraft()">💾 保存草稿</button>
     <label class="btn btn-ghost" style="cursor:pointer">📂 载入草稿<input type="file" accept=".json" onchange="loadDraft(event)" style="display:none"/></label>
     <button class="btn btn-coral" onclick="showExportModal()">📤 导出</button>
@@ -467,6 +511,13 @@ html,body{height:100%;overflow:hidden;background:var(--very-light-yellow);color:
           <div class="mod-icon" style="background:rgba(168,216,192,.2)">📸</div>
           <div class="mod-info"><div class="mod-name">图文模块</div><div class="mod-desc">图片 + 文字说明</div></div>
         </div>
+        <div class="mod-item" onclick="addModule('image')"> 
+          <div class="mod-icon" style="background:rgba(168,216,192,.2)">🖼️</div> 
+          <div class="mod-info"> 
+            <div class="mod-name">图片模块</div> 
+            <div class="mod-desc">上传图片或 AI 生成配图</div> 
+          </div> 
+        </div> 
         <div class="mod-item" onclick="addModule('text')">
           <div class="mod-icon" style="background:rgba(245,230,200,.5)">📝</div>
           <div class="mod-info"><div class="mod-name">文字模块</div><div class="mod-desc">段落 / 标题 / 引用</div></div>
@@ -720,6 +771,10 @@ function defaultModule(type){
     table:{type:'table',headers:['城市','宠物进商场','处罚力度'],rows:[['上海','明确禁止（2026修订）','警告+罚款'],['北京','草案拟全面禁入','没收+5年禁养'],['广州','经营者自主决定','无统一规定'],['成都','设专属泊狗位','鼓励规范管理']]},
     checklist:{type:'checklist',style:'number',title:'养宠人能做什么？',items:[{text:'<strong>参与发声</strong> · 北京草案征集意见截至5月7日，为毛孩子争取合规奔跑空间'},{text:'<strong>牵好绳、捡好便</strong> · 每一次文明举动都在为公共空间投票'},{text:'<strong>支持好商场</strong> · 用脚投票，选择真正投入资源的宠物友好场所'},]},
     cta:{type:'cta',emoji:'💬',title:'你怎么看？',body:'你的城市里，带毛孩子去哪里最安心？那个总笑着递捡屎袋的保安叔叔、那家会调"爪布奇诺"的街角咖啡……',tags:['#宠物友好','#北京养犬新规','#铲屎官必看','#BOND']},
+    image: { 
+      type: 'image', image: '', imagePrompt: '', 
+      caption: '', radius: true, fullWidth: true 
+    } 
   };
   return JSON.parse(JSON.stringify(defaults[type]));
 }
@@ -762,6 +817,11 @@ function renderCanvasArea(){
           ${canvas.modules.length ? canvas.modules.map((m,mi)=>renderModuleHTML(m,ci,mi)).join('') :
             `<div class="canvas-empty-hint"><div class="icon">✦</div><div>从左侧模块库<br/>点击添加模块</div></div>`}
         </div>
+        <!-- Watermark -->
+        <div class="canvas-watermark">
+          <div class="watermark-tag">@BOND萌宠芳邻</div>
+          <img src="img/BOND_Logo_仅英文_蓝色透明底.png" class="watermark-logo" alt=""/>
+        </div>
       </div>
     </div>
   `).join('');
@@ -796,9 +856,36 @@ function renderModuleContent(mod, ci, mi){
     case 'table': return renderTable(mod);
     case 'checklist': return renderChecklist(mod);
     case 'cta': return renderCta(mod);
+    case 'image': return renderImage(mod, ci, mi); 
     default: return '';
   }
 }
+
+function renderImage(m, ci, mi) { 
+  const paddingClass = m.fullWidth ? '' : 'has-padding'; 
+  const radiusClass = m.radius ? 'has-radius' : ''; 
+  if (m._generating) { 
+    return `<div class="mod-image ${paddingClass}"> 
+      <div class="img-gen-loading"> 
+        <div class="spin"></div> 
+        <div>AI 生成中…</div> 
+      </div> 
+    </div>`; 
+  } 
+  if (m.image) { 
+    return `<div class="mod-image ${paddingClass} ${radiusClass}"> 
+      <img src="${m.image}" alt=""/> 
+      ${m.caption ? `<div class="mod-image-caption">${m.caption}</div>` : ''} 
+    </div>`; 
+  } 
+  return `<div class="mod-image ${paddingClass}"> 
+    <div class="mod-image-placeholder" 
+      onclick="event.stopPropagation();selectModule(${ci},${mi});switchTab('props',document.querySelectorAll('.stab')[2])"> 
+      <span class="ph-icon">🖼️</span> 
+      <span>点击上传图片或 AI 生成</span> 
+    </div> 
+  </div>`; 
+} 
 
 function renderCover(m){
   const overlayStyle = m.bgImage ? '' : 'display:none';
@@ -967,6 +1054,7 @@ function renderProps(){
     case 'table': panel.innerHTML = propsTable(mod, canvasIdx, modIdx); break;
     case 'checklist': panel.innerHTML = propsChecklist(mod, canvasIdx, modIdx); break;
     case 'cta': panel.innerHTML = propsCta(mod, canvasIdx, modIdx); break;
+    case 'image': panel.innerHTML = propsImage(mod, canvasIdx, modIdx); break; 
   }
   // rebind rich text if present
   document.querySelectorAll('.rt-edit').forEach(el=>{
@@ -986,7 +1074,15 @@ function renderProps(){
       reader.onload = ev=>{
         const field = inp.dataset.field;
         state.canvases[canvasIdx].modules[modIdx][field] = ev.target.result;
-        reflowAll();
+        renderCanvasArea();
+        renderCanvasList();
+        renderProps();
+
+        // 新增：等待图片渲染后强制 reflow 
+        setTimeout(() => { 
+          const frame = document.getElementById(`canvas-${state.activeCanvas}`); 
+          if (frame) void frame.offsetHeight; 
+        }, 100); 
       };
       reader.readAsDataURL(file);
     });
@@ -1133,37 +1229,74 @@ function propsCta(m, ci, mi){
     <div class="prop-del-btn" onclick="deleteModule(${ci},${mi})">🗑 删除此模块</div>`;
 }
 
+function propsImage(m, ci, mi) { 
+  return ` 
+    ${imgField('image', m.image, '上传图片')} 
+    <div class="prop-section"> 
+      <div class="prop-label">AI 生成配图</div> 
+      <div style="display:flex;gap:6px"> 
+        <input class="prop-input" id="img-prompt-${ci}-${mi}" 
+          placeholder="描述图片内容，如：一只橘猫在阳光下打盹" 
+          value="${escAttr(m.imagePrompt||'')}" 
+          oninput="updateMod('imagePrompt',this.value,${ci},${mi})"/> 
+        <button class="btn btn-primary" style="flex-shrink:0;border-radius:var(--r-sm)" 
+          onclick="generateModuleImage(${ci},${mi})">生成</button> 
+      </div> 
+    </div> 
+    ${propField('图片说明', `<input class="prop-input" 
+      value="${escAttr(m.caption||'')}" 
+      placeholder="可选，显示在图片下方" 
+      oninput="updateMod('caption',this.value,${ci},${mi})"/>`)} 
+    ${propField('显示设置', ` 
+      <div class="prop-toggle-row"> 
+        <span class="prop-toggle-label">撑满画布宽度</span> 
+        <div class="toggle ${m.fullWidth ? 'on' : ''}" 
+          onclick="toggleMod('fullWidth',${ci},${mi})"></div> 
+      </div> 
+      <div class="prop-toggle-row" style="margin-top:8px"> 
+        <span class="prop-toggle-label">圆角</span> 
+        <div class="toggle ${m.radius ? 'on' : ''}" 
+          onclick="toggleMod('radius',${ci},${mi})"></div> 
+      </div> 
+    `)} 
+    ${m.image ? `<div class="prop-del-btn" style="color:var(--muted);background:#f5f5f0;border-color:var(--border)" 
+      onclick="updateMod('image','',${ci},${mi});renderProps()">🗑 移除图片</div>` : ''} 
+    <div class="prop-del-btn" onclick="deleteModule(${ci},${mi})">🗑 删除此模块</div> 
+  `; 
+} 
+
 // ═══════════════════════════════
 //  UPDATE HELPERS
 // ═══════════════════════════════
 function updateMod(field, value, ci, mi){
   state.canvases[ci].modules[mi][field] = value;
-  reflowAll();
+  refreshModuleDOM(ci, mi);
 }
 
 function toggleMod(field, ci, mi){
   state.canvases[ci].modules[mi][field] = !state.canvases[ci].modules[mi][field];
-  reflowAll();
+  refreshModuleDOM(ci, mi);
+  renderProps();
 }
 
 function updateTableHeaders(value, ci, mi){
   state.canvases[ci].modules[mi].headers = value.split('|').map(s=>s.trim());
-  reflowAll();
+  refreshModuleDOM(ci, mi);
 }
 
 function updateTableRows(value, ci, mi){
   state.canvases[ci].modules[mi].rows = value.split('\n').filter(Boolean).map(r=>r.split('|').map(s=>s.trim()));
-  reflowAll();
+  refreshModuleDOM(ci, mi);
 }
 
 function updateChecklistItems(value, ci, mi){
   state.canvases[ci].modules[mi].items = value.split('\n').filter(Boolean).map(t=>({text:t.trim()}));
-  reflowAll();
+  refreshModuleDOM(ci, mi);
 }
 
 function updateCtaTags(value, ci, mi){
   state.canvases[ci].modules[mi].tags = value.trim().split(/\s+/).filter(Boolean);
-  reflowAll();
+  refreshModuleDOM(ci, mi);
 }
 
 function refreshModuleDOM(ci, mi){
@@ -1174,6 +1307,22 @@ function refreshModuleDOM(ci, mi){
   el.className = `mod-block ${isSelected?'selected':''}`;
   el.innerHTML = `<div class="mod-drag-handle" title="拖拽排序">⠿</div>${renderModuleContent(mod, ci, mi)}`;
   bindDrag(el, ci, mi);
+
+  // 新增：图片加载完成后强制触发父容器重新计算高度 
+  const imgs = el.querySelectorAll('img'); 
+  imgs.forEach(img => { 
+    if (!img.complete) { 
+      img.addEventListener('load', () => { 
+        // 强制浏览器重新计算布局 
+        const frame = document.getElementById(`canvas-${ci}`); 
+        if (frame) { 
+          frame.style.minHeight = 'auto'; 
+          // 读一次 offsetHeight 触发 reflow 
+          void frame.offsetHeight; 
+        } 
+      }); 
+    } 
+  }); 
 }
 
 function rtCmd(cmd){ document.execCommand(cmd, false, null); }
@@ -1236,7 +1385,14 @@ function generateInlineHTML(){
   // Build fully inlined HTML for all canvases stacked vertically
   const canvasHTML = state.canvases.map(canvas=>{
     const modulesHTML = canvas.modules.map(mod=>inlineModuleHTML(mod)).join('');
-    return `<div style="width:100%;max-width:600px;margin:0 auto;;font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">${modulesHTML}</div>`;
+    return `<div style="width:100%;max-width:600px;margin:0 auto;font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;position:relative;">
+      ${modulesHTML}
+      <!-- Watermark for Export -->
+      <div style="padding:0 24px 20px;display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:10px;color:#42aadf;font-weight:600;vertical-align:middle;">@BOND萌宠芳邻</span>
+        <img src="https://raw.githubusercontent.com/chauvet/bond-pet-activity2xhsimg.github.io/main/img/BOND_Logo_%E4%BB%85%E8%8B%B1%E6%96%87_%E8%93%9D%E8%89%B2%E9%80%8F%E6%98%8E%E5%BA%95.png" style="height:14px;display:inline-block;vertical-align:middle;" alt=""/>
+      </div>
+    </div>`;
   }).join('\n<div style="height:16px;"></div>\n');
   return `<page>\n${canvasHTML}\n</page>`;
 }
@@ -1251,9 +1407,22 @@ function inlineModuleHTML(mod){
     case 'table': return inlineTable(mod);
     case 'checklist': return inlineChecklist(mod);
     case 'cta': return inlineCta(mod);
+    case 'image': return inlineImage(mod); 
     default: return '';
   }
 }
+
+function inlineImage(m) { 
+  if (!m.image) return ''; 
+  const radius = m.radius ? 'border-radius:12px;overflow:hidden;' : ''; 
+  const padding = m.fullWidth ? '' : 'padding:12px 20px;'; 
+  return `<div style="${padding}"> 
+    <img src="${m.image}" style="width:100%;display:block;${radius}" alt=""/> 
+    ${m.caption 
+      ? `<div style="padding:8px 20px 12px;font-size:12px;color:#9a8f7a;text-align:center;line-height:1.5;">${m.caption}</div>` 
+      : ''} 
+  </div>`; 
+} 
 
 function inlineCover(m){
   const bg = m.bgImage
@@ -1431,81 +1600,31 @@ async function startAILayout(){
   btn.disabled = true;
   btn.textContent = 'AI 排版中...';
 
-const systemPrompt = `你是一个小红书图文排版助手。请将用户提供的文章拆分为多张画布，输出严格合法的 JSON 数组，不要输出任何其他内容，不要加 markdown 代码块。
+const systemPrompt = `你是小红书图文排版助手。请将文章拆分为 JSON 数组。
 
-【第一步：判断文章类型】
-在拆分前，先判断文章属于哪种类型：
+【JSON 质量要求 - 极其重要】
+1. 必须输出严格合法的 JSON 数组，严禁包含任何 Markdown 标记。
+2. 属性名必须包含在双引号内，例如："type": "text"。严禁写成 type": 或 "type:。
+3. 字符串内容中的双引号必须使用反斜杠转义！
+   - 错误："content": "标榜"宠物友好"的店"
+   - 正确："content": "标榜\\"宠物友好\\"的店"
+4. 严禁在对象或数组的最后一个元素后添加逗号。
 
-A. 长文/深度内容（800字以上，有多个子主题）
-   → 拆分为 3-7 张画布，每张聚焦一个子主题
+【排版规则】
+1. 每张画布第一个模块必须是 text(title) 或 cover。
+2. normal 模块内容严禁超过 80 字，超过必须拆分。
 
-B. 短文/情感向内容（800字以下，或结构扁平、情绪单一）
-   → 只输出 1 张画布，模块按文章段落顺序排列
-   → 不强行拆分，保留原文节奏感
+可用模块格式：
+- cover: {"type":"cover","bgColor":"#42AADF","bgImage":"","tag":"🐾 BOND","title":"","subtitle":"","showLogo":true}
+- text: {"type":"text","style":"title|normal|quote|highlight","content":""}
+- imgtext: {"type":"imgtext","layout":"top|left","image":"","imagePrompt":"中文描述","title":"","body":""}
+- image: {"type":"image","image":"","imagePrompt":"中文描述","caption":"","radius":true,"fullWidth":true}
+- checklist: {"type":"checklist","style":"number|check|star","title":"","items":[{"text":""}]}
+- table: {"type":"table","headers":[""],"rows":[[""]]}
+- divider: {"type":"divider","style":"line|thick|dots","icon":"🐾"}
+- cta: {"type":"cta","emoji":"💬","title":"","body":"","tags":["#标签"]}
 
-C. 列举型内容（清单、行为大赏、打卡攻略等）
-   → 1-2 张画布，核心内容用 checklist 模块承载
-
-判断完成后，按对应规则 continue 执行。
-
-JSON 格式：
-[{"name":"画布名","modules":[...]}]
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-【可用模块类型及字段说明】
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-1. cover（封面）——只用一次，放第一张画布第一个
-{"type":"cover","bgColor":"#42AADF","bgImage":"","tag":"🐾 BOND","title":"主标题（10字内，吸睛）","subtitle":"副标题（补充说明）","showLogo":true}
-
-2. text（文字模块）——style 决定视觉层级，必须根据内容语义选择：
-  - style="title"：用于每张画布的第一个模块，作为该画布的大标题，字号最大，12字以内
-  - style="normal"：用于正文段落，每段不超过80字，超过则拆成多个 normal 模块
-  - style="quote"：用于金句、引用、他人原话、数据结论等需要强调的单句
-  - style="highlight"：用于补充说明、背景知识、注意事项等次要信息
-{"type":"text","style":"title|normal|quote|highlight","content":"内容，可用<strong>加粗关键词</strong>"}
-
-3. imgtext（图文模块）——需要配图时使用
-{"type":"imgtext","layout":"top|left","image":"","imagePrompt":"描述图片内容的中文提示词，风格统一为：温暖插画风，BOND宠物品牌调性，暖色系","title":"小标题","body":"配图说明文字"}
-  - layout="top"：图上文下，适合竖版配图
-  - layout="left"：图左文右，适合横版配图或信息密度高时
-
-4. checklist（清单）——用于行动指南、步骤、注意事项等列举型内容
-{"type":"checklist","style":"number|check|star","title":"清单标题","items":[{"text":"条目内容，可用<strong>加粗重点</strong>"}]}
-  - style="number"：步骤类（第1步、第2步）
-  - style="check"：待办/建议类
-  - style="star"：亮点/推荐类
-
-5. table（表格）——用于多维度对比、政策/价格/参数横向比较
-{"type":"table","headers":["列标题1","列标题2","列标题3"],"rows":[["行1列1","行1列2","行1列3"]]}
-
-6. divider（分隔）——用于画布内两个主题之间的视觉过渡，不要滥用
-{"type":"divider","style":"line|thick|dots","icon":"🐾"}
-  - style="line"：细线，轻量分隔
-  - style="thick"：粗线品牌色，强分隔
-  - style="dots"：虚线，柔和分隔
-
-7. cta（互动引导）——只用一次，放最后一张画布最后一个
-{"type":"cta","emoji":"💬","title":"互动标题","body":"引导读者评论的文字，口语化，提出一个具体问题","tags":["#话题标签1","#话题标签2","#话题标签3"]}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-【排版节奏规则】
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-每张画布结构模板（按顺序）：
-  ① text(title) ← 画布大标题，必须有
-  ② 内容模块 × 2-4个（normal / quote / highlight / checklist / table / imgtext）
-  ③ divider ← 可选，内容主题切换时用
-
-全文画布数量：3-7张，每张聚焦一个子主题。
-
-严格禁止：
-- 连续出现两个 text(title)
-- 单张画布超过6个模块
-- cover 或 cta 出现多次
-- normal 模块内容超过100字（超过必须拆分）
-- 使用 imgtext 时，image 字段必须保持为空字符串，所有图片描述必须填在 imagePrompt 中`;
-  try {
+输出格式：[{"name":"画布名","modules":[...]}]`; try {
     const response = await fetch('https://open.bigmodel.cn/api/paas/v4/chat/completions', {
       method: 'POST',
       headers: {
@@ -1528,11 +1647,40 @@ JSON 格式：
     }
 
     const data = await response.json();
-    const aiText = data.choices[0].message.content;
+    let rawText = data.choices[0].message.content;
     
-    // Clean potential markdown wrappers if AI didn't follow instructions perfectly
-    const cleanJson = aiText.replace(/^```json/, '').replace(/```$/, '').trim();
-    const result = JSON.parse(cleanJson);
+    // 清洗：去掉首尾空白 
+    rawText = rawText.trim(); 
+    
+    // 清洗：如果模型还是套了 markdown 代码块，剥掉 
+    rawText = rawText.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim(); 
+    
+    // 清洗：找到第一个 [ 和最后一个 ]，只取中间的部分 
+    const startIdx = rawText.indexOf('['); 
+    const endIdx = rawText.lastIndexOf(']'); 
+    if (startIdx === -1 || endIdx === -1 || startIdx >= endIdx) { 
+      throw new Error('返回内容中找不到有效的 JSON 数组'); 
+    } 
+    rawText = rawText.slice(startIdx, endIdx + 1); 
+    
+    // 解析 
+    let result; 
+    try { 
+      result = JSON.parse(rawText); 
+    } catch (e) { 
+      let fixedText = rawText;
+      // 1. 修复属性名缺失前引号，如 style": -> "style":
+      fixedText = fixedText.replace(/([{,\s])([a-zA-Z0-9_]+)":/g, '$1"$2":');
+      // 2. 修复末尾多余逗号
+      fixedText = fixedText.replace(/,\s*([\]}])/g, '$1');
+      
+      try {
+        result = JSON.parse(fixedText);
+      } catch (e2) {
+        console.error('JSON 解析失败，尝试修复后仍失败。原始文本：', rawText, '修复后文本：', fixedText);
+        throw new Error(`JSON 解析失败：${e.message}。建议缩短内容或检查文章中的特殊引号。`);
+      }
+    }
 
     if (Array.isArray(result)) {
       // Find all image prompts
@@ -1599,11 +1747,58 @@ JSON 格式：
   }
 }
 
+async function generateModuleImage(ci, mi) { 
+  const mod = state.canvases[ci].modules[mi]; 
+  if (!mod.imagePrompt) { toast('请先填写图片描述'); return; } 
+
+  // 从 AI 排版 Modal 的 input 里取 API Key（复用已有的） 
+  const apiKey = document.getElementById('ai-key')?.value?.trim(); 
+  if (!apiKey) { toast('请先在「AI 排版」中填入 API Key'); return; } 
+
+  mod._generating = true; 
+  refreshModuleDOM(ci, mi); 
+  renderProps(); 
+
+  try { 
+    const res = await fetch('https://open.bigmodel.cn/api/paas/v4/images/generations', { 
+      method: 'POST', 
+      headers: { 
+        'Content-Type': 'application/json', 
+        'Authorization': `Bearer ${apiKey}` 
+      }, 
+      body: JSON.stringify({ 
+        model: 'cogview-3', 
+        prompt: `温暖插画风，BOND宠物品牌调性，暖色系。${mod.imagePrompt}` 
+      }) 
+    }); 
+    const data = await res.json(); 
+    if (data.data && data.data[0] && data.data[0].url) {
+      mod.image = data.data[0].url; 
+      toast('✅ 图片生成成功'); 
+    } else {
+      throw new Error(data.error?.message || '生成失败');
+    }
+  } catch(e) { 
+    toast('❌ 图片生成失败：' + e.message); 
+  } finally { 
+    mod._generating = false; 
+    refreshModuleDOM(ci, mi); 
+    renderProps(); 
+  } 
+} 
+
 // ═══════════════════════════════
 //  DRAFT SAVE / LOAD
 // ═══════════════════════════════
 function saveDraft(){
-  const json = JSON.stringify({canvases: state.canvases}, null, 2);
+  const cleanCanvases = state.canvases.map(canvas => ({
+    ...canvas,
+    modules: canvas.modules.map(mod => {
+      const { _generating, ...rest } = mod;
+      return rest;
+    })
+  }));
+  const json = JSON.stringify({canvases: cleanCanvases}, null, 2);
   const blob = new Blob([json], {type:'application/json'});
   const link = document.createElement('a');
   link.href = URL.createObjectURL(blob);
