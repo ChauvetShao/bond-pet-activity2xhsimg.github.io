@@ -4,6 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>BOND 图文排版工具</title>
+<link rel="shortcut icon" href="./img/favicon.ico">
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet"/>
@@ -282,7 +283,7 @@ html,body{height:100%;overflow:hidden;background:var(--very-light-yellow);color:
   padding:32px 24px;overflow:hidden;
 }
 .mod-cover-bg{position:absolute;inset:0;object-fit:cover;width:100%;height:100%}
-.mod-cover-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.55) 0%,rgba(0,0,0,.1) 60%,transparent 100%)}
+.mod-cover-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(66,170,223,1) 0%,rgba(66,170,223.1) 50%,transparent 100%)}
 .mod-cover-content{position:relative;z-index:1;text-align:center;width:100%}
 .mod-cover-tag{
   display:inline-block;background:var(--white-overlay);backdrop-filter:blur(8px);
@@ -426,7 +427,7 @@ html,body{height:100%;overflow:hidden;background:var(--very-light-yellow);color:
   justify-content: center; gap: 8px; 
   font-size: 13px; color: var(--black); 
 } 
-.img-gen-loading .spin { 
+.spin { 
   width: 24px; height: 24px; border: 2px solid var(--theme-blue); 
   border-top-color: transparent; border-radius: 50%; 
   animation: spin .8s linear infinite; 
@@ -475,7 +476,6 @@ html,body{height:100%;overflow:hidden;background:var(--very-light-yellow);color:
   <div class="topbar-sep"></div>
   <span class="topbar-title">小红书 · 公众号模块化排版工具</span>
   <div class="topbar-actions">
-    <button class="btn btn-primary" onclick="showAIModal()">✨ AI 排版</button>
     <button class="btn btn-ghost" onclick="saveDraft()">💾 保存草稿</button>
     <label class="btn btn-ghost" style="cursor:pointer">📂 载入草稿<input type="file" accept=".json" onchange="loadDraft(event)" style="display:none"/></label>
     <button class="btn btn-coral" onclick="showExportModal()">📤 导出</button>
@@ -489,8 +489,10 @@ html,body{height:100%;overflow:hidden;background:var(--very-light-yellow);color:
     <div class="sidebar-tabs">
       <div class="stab active" onclick="switchTab('canvases',this)">画布</div>
       <div class="stab" onclick="switchTab('modules',this)">模块库</div>
+      <div class="stab" onclick="switchTab('ai',this)">AI 排版</div>
       <div class="stab" onclick="switchTab('props',this)">属性</div>
       <div class="stab" onclick="switchTab('export',this)">导出</div>
+      <div class="stab" onclick="switchTab('settings',this)">设置</div>
     </div>
 
     <!-- CANVAS TAB -->
@@ -548,6 +550,25 @@ html,body{height:100%;overflow:hidden;background:var(--very-light-yellow);color:
       </div>
     </div>
 
+    <!-- AI TAB -->
+    <div class="sidebar-panel" id="tab-ai">
+      <div class="prop-panel">
+        <div class="prop-section">
+          <div class="prop-label">AI 智能排版</div>
+          <p style="font-size:12px; color:var(--gray); margin-bottom:8px;">粘贴文章原文，AI 将自动为您规划画布和模块。</p>
+          <textarea class="prop-input" id="ai-input" placeholder="在此粘贴文章原文…" style="height:260px; resize:vertical;"></textarea>
+        </div>
+        <button class="btn btn-primary" id="ai-start-btn" onclick="startAILayout()" style="width:100%; margin-top:12px; height:40px; justify-content:center;">✨ 开始 AI 排版</button>
+        <div id="ai-status-hint" style="font-size:12px; color:var(--theme-blue); margin-top:10px; text-align:center; display:none;"></div>
+        
+        <div class="prop-section" style="margin-top: 24px; padding-top: 24px; border-top: 1.5px solid var(--very-light-gray);">
+          <div class="prop-label">批量操作</div>
+          <button class="btn btn-ghost" id="gen-all-imgs-btn" onclick="generateAllImages()" style="width:100%; margin-top:8px; height:40px; justify-content:center; border-color:var(--theme-blue); color:var(--theme-blue);">🎨 一键生成文章配图</button>
+          <p style="font-size:11px; color:var(--muted); margin-top:8px; line-height:1.5;">点击后将自动为所有模块中「可以生成图片」的部分生成配图。</p>
+        </div>
+      </div>
+    </div>
+
     <!-- PROPS TAB -->
     <div class="sidebar-panel" id="tab-props">
       <div class="prop-panel" id="prop-panel">
@@ -570,6 +591,22 @@ html,body{height:100%;overflow:hidden;background:var(--very-light-yellow);color:
       </div>
     </div>
 
+    <!-- SETTINGS TAB -->
+    <div class="sidebar-panel" id="tab-settings">
+      <div class="prop-panel">
+        <div class="prop-section">
+          <div class="prop-label">API 配置</div>
+          <p style="font-size:12px; color:var(--gray); margin-bottom:8px;">配置智谱 AI API Key 以解锁 AI 自动排版和 AI 生成图片功能。</p>
+          <input class="prop-input" type="password" id="ai-key-input" placeholder="输入智谱 AI API Key" oninput="saveApiKey(this.value)"/>
+          <p style="font-size:11px; color:var(--muted); margin-top:6px;">Key 将保存在您的浏览器本地，不会上传至服务器。</p>
+        </div>
+        <div class="prop-section" style="margin-top:20px; padding-top:20px; border-top:1px solid var(--light-gray);">
+          <div class="prop-label">教程与帮助</div>
+          <a href="https://jcn4qkhe8vt2.feishu.cn/docx/HHffdvHnFoVVatxboILc0F8anWd?from=from_copylink" target="_blank" class="btn btn-ghost" style="width:100%; justify-content:center; text-decoration:none;">查看使用教程</a>
+        </div>
+      </div>
+    </div>
+
   </aside>
 
   <!-- CANVAS AREA -->
@@ -589,22 +626,20 @@ html,body{height:100%;overflow:hidden;background:var(--very-light-yellow);color:
   </div>
 </div>
 
-<!-- AI LAYOUT MODAL -->
-<div class="modal-overlay" id="ai-modal">
-  <div class="modal">
-    <div class="modal-title">AI 排版助手</div>
-    <div class="prop-section">
-      <div class="prop-label">文章内容</div>
-      <textarea class="prop-input" id="ai-input" placeholder="粘贴文章原文…" style="height:200px; resize:vertical;"></textarea>
+<!-- FULLSCREEN LOADING OVERLAY -->
+<div class="modal-overlay" id="full-loading-overlay" style="z-index: 9999; flex-direction: column; background: rgba(255, 255, 255, 0.95);">
+  <div style="display: flex; flex-direction: column; align-items: center; gap: 20px;">
+    <div class="spin" style="width: 48px; height: 48px; border-width: 4px; border-top-color: transparent;"></div>
+    <div style="text-align: center;">
+      <div id="loading-title" style="font-size: 18px; font-weight: 700; color: var(--black); margin-bottom: 8px;">正在一键生成文章配图</div>
+      <div id="loading-progress" style="font-size: 14px; color: var(--gray); font-variant-numeric: tabular-nums;">正在准备生成 (0/0)</div>
     </div>
-    <div class="prop-section" style="margin-top:12px;">
-      <div class="prop-label">API Key</div>
-      <input class="prop-input" type="password" id="ai-key" placeholder="智谱 AI API Key"/>
+    <div style="width: 240px; height: 6px; background: var(--very-light-gray); border-radius: 100px; overflow: hidden; margin-top: 4px;">
+      <div id="loading-bar" style="width: 0%; height: 100%; background: var(--theme-blue); transition: width 0.3s ease;"></div>
     </div>
-    <div class="modal-actions">
-      <button class="btn btn-ghost" onclick="closeAIModal()">取消</button>
-      <button class="btn btn-primary" id="ai-start-btn" onclick="startAILayout()">开始排版</button>
-    </div>
+    <p style="font-size: 12px; color: var(--muted); max-width: 300px; text-align: center; line-height: 1.6;">
+      正在通过 CogView-3 创作精美配图，请耐心等待，这可能需要几十秒时间...
+    </p>
   </div>
 </div>
 
@@ -634,6 +669,30 @@ function init(){
   addCanvas();
   renderCanvasList();
   renderCanvasArea();
+  loadApiKey();
+}
+
+// 辅助函数：保存/读取 API Key
+function saveApiKey(key) {
+  localStorage.setItem('bond_ai_api_key', key);
+}
+
+function loadApiKey() {
+  const key = localStorage.getItem('bond_ai_api_key') || '';
+  const input = document.getElementById('ai-key-input');
+  if (input) input.value = key;
+  return key;
+}
+
+function getApiKey() {
+  return localStorage.getItem('bond_ai_api_key') || '';
+}
+
+const IMAGE_STYLE_REQUIREMENTS = '无文字，16:9格式，温暖治愈系卡通插画，Q版人物，扁平化设计，线条圆润，奶油白+暖黄+天蓝配色，明亮清透，带柔和光晕，爱心爪印点缀，无文字，高清';
+function buildImagePrompt(subject) {
+  const cleanSubject = String(subject || '').trim();
+  if (!cleanSubject) return IMAGE_STYLE_REQUIREMENTS;
+  return `画面主体内容：${cleanSubject}。${IMAGE_STYLE_REQUIREMENTS}`;
 }
 
 // ═══════════════════════════════
@@ -1197,14 +1256,68 @@ function propsDivider(m, ci, mi){
     <div class="prop-del-btn" onclick="deleteModule(${ci},${mi})">🗑 删除此模块</div>`;
 }
 
-function propsTable(m, ci, mi){
-  const headersStr = (m.headers||[]).join('|');
-  const rowsStr = (m.rows||[]).map(r=>r.join('|')).join('\n');
-  return `
-    ${propField('列标题（用 | 分隔）', `<input class="prop-input" value="${escAttr(headersStr)}" oninput="updateTableHeaders(this.value,${ci},${mi})"/>`)}
-    ${propField('数据行（每行一行，列用 | 分隔）', `<textarea class="prop-input prop-textarea" oninput="updateTableRows(this.value,${ci},${mi})">${escAttr(rowsStr)}</textarea>`)}
-    <div class="prop-del-btn" onclick="deleteModule(${ci},${mi})">🗑 删除此模块</div>`;
-}
+function propsTable(m, ci, mi) { 
+   const headers = m.headers || []; 
+   const rows = m.rows || []; 
+ 
+   const headerCells = headers.map((h, hi) => ` 
+     <th style="background:var(--very-light-blue);padding:0;position:relative;border:1px solid var(--light-gray);"> 
+       <input 
+         value="${escAttr(h)}" 
+         oninput="updateTableCell('header',${hi},-1,this.value,${ci},${mi})" 
+         style="width:100%;padding:6px 8px;border:none;background:transparent; 
+                font-size:12px;font-weight:600;color:var(--theme-blue);outline:none; 
+                border-bottom:2px solid transparent;box-sizing:border-box;" 
+         onfocus="this.style.borderBottomColor='var(--theme-blue)'" 
+         onblur="this.style.borderBottomColor='transparent'" 
+       /> 
+     </th> 
+   `).join(''); 
+ 
+   const dataRows = rows.map((row, ri) => ` 
+     <tr> 
+       ${row.map((cell, ci2) => ` 
+         <td style="padding:0;border:1px solid var(--light-gray);"> 
+           <input 
+             value="${escAttr(cell)}" 
+             oninput="updateTableCell('row',${ci2},${ri},this.value,${ci},${mi})" 
+             style="width:100%;padding:6px 8px;border:none;background:transparent; 
+                    font-size:12px;color:var(--black);outline:none; 
+                    border-bottom:2px solid transparent;box-sizing:border-box;" 
+             onfocus="this.style.borderBottomColor='var(--theme-blue)'" 
+             onblur="this.style.borderBottomColor='transparent'" 
+           /> 
+         </td> 
+       `).join('')} 
+     </tr> 
+   `).join(''); 
+ 
+   return ` 
+     <div class="prop-section"> 
+       <div class="prop-label">表格编辑</div> 
+       <div style="overflow-x:auto;border:1.5px solid var(--light-gray);border-radius:var(--r-sm);"> 
+         <table style="width:100%;border-collapse:collapse;table-layout:fixed;"> 
+           <thead><tr>${headerCells}</tr></thead> 
+           <tbody>${dataRows}</tbody> 
+         </table> 
+       </div> 
+     </div> 
+     <div class="prop-section"> 
+       <div class="prop-label">编辑行列</div> 
+       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;"> 
+         <button class="btn btn-ghost" style="font-size:12px;padding:6px;" 
+           onclick="tableAddCol(${ci},${mi})">＋ 添加列</button> 
+         <button class="btn btn-ghost" style="font-size:12px;padding:6px;" 
+           onclick="tableDelCol(${ci},${mi})">－ 删除末列</button> 
+         <button class="btn btn-ghost" style="font-size:12px;padding:6px;" 
+           onclick="tableAddRow(${ci},${mi})">＋ 添加行</button> 
+         <button class="btn btn-ghost" style="font-size:12px;padding:6px;" 
+           onclick="tableDelRow(${ci},${mi})">－ 删除末行</button> 
+       </div> 
+     </div> 
+     <div class="prop-del-btn" onclick="deleteModule(${ci},${mi})">🗑 删除此模块</div> 
+   `; 
+ } 
 
 function propsChecklist(m, ci, mi){
   const itemsStr = (m.items||[]).map(item=>item.text).join('\n');
@@ -1279,15 +1392,49 @@ function toggleMod(field, ci, mi){
   renderProps();
 }
 
-function updateTableHeaders(value, ci, mi){
-  state.canvases[ci].modules[mi].headers = value.split('|').map(s=>s.trim());
-  refreshModuleDOM(ci, mi);
-}
-
-function updateTableRows(value, ci, mi){
-  state.canvases[ci].modules[mi].rows = value.split('\n').filter(Boolean).map(r=>r.split('|').map(s=>s.trim()));
-  refreshModuleDOM(ci, mi);
-}
+// 单元格直接更新，不触发 renderProps 避免闪退 
+function updateTableCell(type, colIdx, rowIdx, value, ci, mi) { 
+  const mod = state.canvases[ci].modules[mi]; 
+  if (type === 'header') { 
+    mod.headers[colIdx] = value; 
+  } else { 
+    mod.rows[rowIdx][colIdx] = value; 
+  } 
+  refreshModuleDOM(ci, mi); 
+} 
+ 
+// 以下四个操作改变结构，需要重绘属性面板 
+function tableAddCol(ci, mi) { 
+  const mod = state.canvases[ci].modules[mi]; 
+  mod.headers.push('新列'); 
+  mod.rows.forEach(row => row.push('')); 
+  refreshModuleDOM(ci, mi); 
+  renderProps(); 
+} 
+ 
+function tableDelCol(ci, mi) { 
+  const mod = state.canvases[ci].modules[mi]; 
+  if (mod.headers.length <= 1) { toast('至少保留一列'); return; } 
+  mod.headers.pop(); 
+  mod.rows.forEach(row => row.pop()); 
+  refreshModuleDOM(ci, mi); 
+  renderProps(); 
+} 
+ 
+function tableAddRow(ci, mi) { 
+  const mod = state.canvases[ci].modules[mi]; 
+  mod.rows.push(mod.headers.map(() => '')); 
+  refreshModuleDOM(ci, mi); 
+  renderProps(); 
+} 
+ 
+function tableDelRow(ci, mi) { 
+  const mod = state.canvases[ci].modules[mi]; 
+  if (mod.rows.length === 0) { toast('没有可删除的行'); return; } 
+  mod.rows.pop(); 
+  refreshModuleDOM(ci, mi); 
+  renderProps(); 
+} 
 
 function updateChecklistItems(value, ci, mi){
   state.canvases[ci].modules[mi].items = value.split('\n').filter(Boolean).map(t=>({text:t.trim()}));
@@ -1577,28 +1724,23 @@ document.getElementById('html-modal').addEventListener('click', e=>{ if(e.target
 // ═══════════════════════════════
 //  AI LAYOUT
 // ═══════════════════════════════
-function showAIModal(){
-  document.getElementById('ai-modal').classList.add('show');
-}
-
-function closeAIModal(){
-  document.getElementById('ai-modal').classList.remove('show');
-  document.getElementById('ai-input').value = '';
-  document.getElementById('ai-key').value = '';
-}
-
-document.getElementById('ai-modal').addEventListener('click', e=>{ if(e.target===e.currentTarget) closeAIModal(); });
-
 async function startAILayout(){
   const content = document.getElementById('ai-input').value.trim();
-  const apiKey = document.getElementById('ai-key').value.trim();
+  const apiKey = getApiKey();
   const btn = document.getElementById('ai-start-btn');
+  const statusHint = document.getElementById('ai-status-hint');
 
   if(!content){ toast('⚠️ 请输入文章内容'); return; }
-  if(!apiKey){ toast('⚠️ 请输入 API Key'); return; }
+  if(!apiKey){ 
+    toast('⚠️ 请先在「设置」中配置 API Key'); 
+    switchTab('settings', document.querySelectorAll('.stab')[5]);
+    return; 
+  }
 
   btn.disabled = true;
   btn.textContent = 'AI 排版中...';
+  statusHint.style.display = 'block';
+  statusHint.textContent = '正在分析文章内容...';
 
 const systemPrompt = `你是小红书图文排版助手。请将文章拆分为 JSON 数组。
 
@@ -1609,10 +1751,6 @@ const systemPrompt = `你是小红书图文排版助手。请将文章拆分为 
    - 错误："content": "标榜"宠物友好"的店"
    - 正确："content": "标榜\\"宠物友好\\"的店"
 4. 严禁在对象或数组的最后一个元素后添加逗号。
-
-【排版规则】
-1. 每张画布第一个模块必须是 text(title) 或 cover。
-2. normal 模块内容严禁超过 80 字，超过必须拆分。
 
 可用模块格式：
 - cover: {"type":"cover","bgColor":"#42AADF","bgImage":"","tag":"🐾 BOND","title":"","subtitle":"","showLogo":true}
@@ -1707,7 +1845,7 @@ const systemPrompt = `你是小红书图文排版助手。请将文章拆分为 
             },
             body: JSON.stringify({
               model: 'cogview-3',
-              prompt: mod.imagePrompt
+              prompt: buildImagePrompt(mod.imagePrompt)
             })
           });
 
@@ -1732,7 +1870,7 @@ const systemPrompt = `你是小红书图文排版助手。请将文章拆分为 
       renderCanvasList();
       renderCanvasArea();
       renderProps();
-      closeAIModal();
+      switchTab('canvases', document.querySelectorAll('.stab')[0]);
       toast(`✨ AI 排版完成，共生成 ${result.length} 张画布`);
     } else {
       throw new Error('AI 返回格式错误');
@@ -1743,7 +1881,8 @@ const systemPrompt = `你是小红书图文排版助手。请将文章拆分为 
     toast(`❌ AI 排版失败：${error.message}`);
   } finally {
     btn.disabled = false;
-    btn.textContent = '开始排版';
+    btn.textContent = '✨ 开始 AI 排版';
+    statusHint.style.display = 'none';
   }
 }
 
@@ -1751,9 +1890,12 @@ async function generateModuleImage(ci, mi) {
   const mod = state.canvases[ci].modules[mi]; 
   if (!mod.imagePrompt) { toast('请先填写图片描述'); return; } 
 
-  // 从 AI 排版 Modal 的 input 里取 API Key（复用已有的） 
-  const apiKey = document.getElementById('ai-key')?.value?.trim(); 
-  if (!apiKey) { toast('请先在「AI 排版」中填入 API Key'); return; } 
+  const apiKey = getApiKey();
+  if (!apiKey) { 
+    toast('⚠️ 请先在「设置」中配置 API Key'); 
+    switchTab('settings', document.querySelectorAll('.stab')[5]);
+    return; 
+  } 
 
   mod._generating = true; 
   refreshModuleDOM(ci, mi); 
@@ -1768,7 +1910,7 @@ async function generateModuleImage(ci, mi) {
       }, 
       body: JSON.stringify({ 
         model: 'cogview-3', 
-        prompt: `温暖插画风，BOND宠物品牌调性，暖色系。${mod.imagePrompt}` 
+        prompt: buildImagePrompt(mod.imagePrompt) 
       }) 
     }); 
     const data = await res.json(); 
@@ -1786,6 +1928,111 @@ async function generateModuleImage(ci, mi) {
     renderProps(); 
   } 
 } 
+
+async function generateAllImages() {
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    toast('⚠️ 请先在「设置」中配置 API Key');
+    switchTab('settings', document.querySelectorAll('.stab')[5]);
+    return;
+  }
+
+  const stripHtml = (text) => String(text || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  const hasImageValue = (value) => typeof value === 'string' && value.trim().length > 0;
+  const buildFallbackPrompt = (mod) => {
+    if (mod.type === 'cover') {
+      const coverParts = [mod.tag, mod.title, mod.subtitle].map(stripHtml).filter(Boolean);
+      return coverParts.length ? `小红书封面，突出主题：${coverParts.join('，')}` : '小红书封面，宠物友好话题，信息冲击感强';
+    }
+    if (mod.type === 'imgtext' || mod.type === 'image') {
+      const bodyParts = [mod.title, mod.body, mod.caption].map(stripHtml).filter(Boolean);
+      return bodyParts.length ? `文章配图，内容围绕：${bodyParts.join('，')}` : '文章配图，宠物生活场景，温暖有故事感';
+    }
+    return '';
+  };
+
+  // 1. Collect all modules that need image generation
+  const tasks = [];
+  state.canvases.forEach((canvas, ci) => {
+    canvas.modules.forEach((mod, mi) => {
+      // cover 使用 bgImage 字段，其它模块使用 image 字段
+      const imageField = mod.type === 'cover' ? 'bgImage' : 'image';
+      const supportsAIImage = mod.type === 'cover' || mod.type === 'image' || mod.type === 'imgtext';
+      if (!supportsAIImage || hasImageValue(mod[imageField])) return;
+
+      const prompt = stripHtml(mod.imagePrompt || '') || buildFallbackPrompt(mod);
+      if (prompt) {
+        tasks.push({ ci, mi, prompt, imageField });
+      }
+    });
+  });
+
+  if (tasks.length === 0) {
+    toast('✅ 没有发现需要生成配图的空位');
+    return;
+  }
+
+  // 2. Show loading overlay
+  const overlay = document.getElementById('full-loading-overlay');
+  const progressText = document.getElementById('loading-progress');
+  const progressBar = document.getElementById('loading-bar');
+  
+  overlay.classList.add('show');
+  
+  let successCount = 0;
+  let failCount = 0;
+
+  for (let i = 0; i < tasks.length; i++) {
+    const { ci, mi, prompt, imageField } = tasks[i];
+    const currentTaskNum = i + 1;
+    
+    // Update progress
+    progressText.textContent = `正在生成第 ${currentTaskNum}/${tasks.length} 张图片...`;
+    progressBar.style.width = `${(i / tasks.length) * 100}%`;
+
+    const mod = state.canvases[ci].modules[mi];
+    mod._generating = true;
+    refreshModuleDOM(ci, mi);
+
+    try {
+      const res = await fetch('https://open.bigmodel.cn/api/paas/v4/images/generations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: 'cogview-3',
+          prompt: buildImagePrompt(prompt)
+        })
+      });
+      const data = await res.json();
+      if (data.data && data.data[0] && data.data[0].url) {
+        mod[imageField] = data.data[0].url;
+        successCount++;
+      } else {
+        console.warn('Image Gen failed:', data);
+        failCount++;
+      }
+    } catch (e) {
+      console.error('Batch Gen Error:', e);
+      failCount++;
+    } finally {
+      mod._generating = false;
+      refreshModuleDOM(ci, mi);
+    }
+  }
+
+  // 3. Finish
+  progressBar.style.width = '100%';
+  progressText.textContent = `生成完成！成功 ${successCount}，失败 ${failCount}`;
+  
+  setTimeout(() => {
+    overlay.classList.remove('show');
+    toast(`✅ 一键生成完成：成功 ${successCount} 张，失败 ${failCount} 张`);
+    renderProps();
+  }, 1500);
+}
 
 // ═══════════════════════════════
 //  DRAFT SAVE / LOAD
