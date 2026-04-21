@@ -1,0 +1,1479 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>BOND 图文排版工具</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root {
+  /* Mode 1 */
+  /* color */
+  --black: #1d2129;
+  --black-overlay: #0c0c0d66;
+  --black-text: #0c0c0d33;
+  --black-toast: #0c0c0dcc;
+  --gray: #2e2e2e;
+  --light-blue: #e2f4fe;
+  --light-gray: #c9cdd4;
+  --light-pink: #ffebe8;
+  --medium-blue: #97d9f9;
+  --orange: #ff8800;
+  --pink: #f35d55;
+  --sos-red: #eb1f00;
+  --theme-blue: #42aadf;
+  --theme-yellow: #fff4ae;
+  --very-light-blue: #f8fdff;
+  --very-light-gray: #f7f8fa;
+  --very-light-yellow: #fffceb;
+  --white: #ffffff;
+  --white-overlay: #ffffff66;
+  --yellow: #ffde00;
+
+  /* Layout */
+  --sidebar: 300px;
+  --topbar: 52px;
+  --r: 12px;
+  --r-sm: 8px;
+}
+
+html,body{height:100%;overflow:hidden;background:var(--very-light-yellow);color:var(--black);font-family:'DM Sans','Noto Sans SC',sans-serif;font-size:14px}
+
+/* ── TOP BAR ── */
+.topbar{
+  position:fixed;top:0;left:0;right:0;height:var(--topbar);z-index:100;
+  background:var(--white);border-bottom:1.5px solid var(--light-gray);
+  display:flex;align-items:center;padding:0 20px;gap:16px;
+}
+.topbar-brand{display:flex;align-items:center;gap:8px;font-weight:600;font-size:14px;color:var(--black)}
+.topbar-brand .dot{width:8px;height:8px;background:var(--theme-blue);border-radius:50%}
+.topbar-back{font-size:12px;color:var(--gray);text-decoration:none;display:flex;align-items:center;gap:4px;padding:4px 10px;border-radius:100px;transition:background .2s}
+.topbar-back:hover{background:var(--light-blue);color:var(--theme-blue)}
+.topbar-sep{width:1px;height:20px;background:var(--light-gray)}
+.topbar-title{font-size:13px;color:var(--gray);font-weight:400}
+.topbar-actions{margin-left:auto;display:flex;gap:8px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 16px;border-radius:100px;font-size:12.5px;font-weight:500;cursor:pointer;border:none;transition:all .2s;font-family:inherit}
+.btn-ghost{background:transparent;color:var(--gray);border:1.5px solid var(--light-gray)}
+.btn-ghost:hover{border-color:var(--theme-blue);color:var(--theme-blue)}
+.btn-primary{background:var(--theme-blue);color:white}
+.btn-primary:hover{opacity: 0.9}
+.btn-coral{background:var(--pink);color:white}
+.btn-coral:hover{opacity: 0.9}
+
+/* ── LAYOUT ── */
+.app{display:flex;height:100vh;padding-top:var(--topbar)}
+
+/* ── LEFT SIDEBAR ── */
+.sidebar{
+  width:var(--sidebar);flex-shrink:0;
+  background:var(--white);border-right:1.5px solid var(--light-gray);
+  display:flex;flex-direction:column;overflow:hidden;
+}
+.sidebar-tabs{display:flex;border-bottom:1.5px solid var(--light-gray);flex-shrink:0}
+.stab{flex:1;padding:10px 4px;text-align:center;font-size:11.5px;font-weight:500;color:var(--gray);cursor:pointer;border-bottom:2.5px solid transparent;transition:all .2s;letter-spacing:.02em}
+.stab.active{color:var(--theme-blue);border-bottom-color:var(--theme-blue)}
+.stab:hover:not(.active){color:var(--black)}
+
+.sidebar-panel{flex:1;overflow-y:auto;overflow-x:hidden;display:none;flex-direction:column}
+.sidebar-panel.active{display:flex}
+
+/* scrollbar */
+.sidebar-panel::-webkit-scrollbar{width:4px}
+.sidebar-panel::-webkit-scrollbar-track{background:transparent}
+.sidebar-panel::-webkit-scrollbar-thumb{background:var(--light-gray);border-radius:2px}
+
+/* ── CANVAS MANAGER ── */
+.canvas-list{padding:12px;display:flex;flex-direction:column;gap:8px}
+.canvas-item{
+  position:relative;border:2px solid var(--light-gray);border-radius:var(--r-sm);
+  padding:10px 12px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:10px;
+}
+.canvas-item.active{border-color:var(--theme-blue);background:var(--light-blue)}
+.canvas-item:hover:not(.active){border-color:var(--theme-blue);background:var(--very-light-blue)}
+.canvas-thumb{
+  width:32px;height:42px;background:var(--very-light-yellow);border-radius:4px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--gray);
+  overflow:hidden;
+}
+.canvas-thumb img{width:100%;height:100%;object-fit:cover}
+.canvas-info{flex:1;min-width:0}
+.canvas-name{font-size:12.5px;font-weight:500;color:var(--black);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.canvas-sub{font-size:11px;color:var(--gray)}
+.canvas-del{opacity:0;font-size:16px;color:var(--gray);cursor:pointer;transition:opacity .2s;line-height:1;padding:2px}
+.canvas-del:hover{color:var(--sos-red)}
+.canvas-item:hover .canvas-del{opacity:1}
+.add-canvas-btn{
+  margin:0 12px 12px;padding:10px;border:1.5px dashed var(--light-gray);border-radius:var(--r-sm);
+  text-align:center;cursor:pointer;font-size:12.5px;color:var(--gray);transition:all .2s;
+}
+.add-canvas-btn:hover{border-color:var(--theme-blue);color:var(--theme-blue);background:var(--light-blue)}
+
+/* ── MODULE LIBRARY ── */
+.module-lib{padding:12px;display:flex;flex-direction:column;gap:6px}
+.mod-group-title{font-size:10.5px;font-weight:600;color:var(--gray);letter-spacing:.08em;text-transform:uppercase;padding:4px 4px 6px;margin-top:4px}
+.mod-item{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 12px;border:1.5px solid var(--light-gray);border-radius:var(--r-sm);
+  cursor:pointer;transition:all .2s;background:var(--white);
+}
+.mod-item:hover{border-color:var(--theme-blue);background:var(--light-blue);transform:translateX(3px)}
+.mod-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.mod-info{flex:1}
+.mod-name{font-size:12.5px;font-weight:500;color:var(--black)}
+.mod-desc{font-size:11px;color:var(--gray);margin-top:1px}
+
+/* ── PROPERTY PANEL ── */
+.prop-panel{padding:12px;display:flex;flex-direction:column;gap:12px}
+.prop-empty{padding:32px 16px;text-align:center;color:var(--gray);font-size:15px;line-height:1.8}
+.prop-empty .icon{font-size:28px}
+.prop-section{display:flex;flex-direction:column;gap:8px}
+.prop-label{font-size:11px;font-weight:600;color:var(--gray);letter-spacing:.06em;text-transform:uppercase}
+.prop-input{
+  width:100%;padding:8px 10px;border:1.5px solid var(--light-gray);border-radius:var(--r-sm);
+  font-size:13px;font-family:inherit;color:var(--black);background:var(--white);outline:none;transition:border-color .2s;
+}
+.prop-input:focus{border-color:var(--theme-blue)}
+.prop-textarea{resize:vertical;min-height:72px;line-height:1.5}
+.prop-row{display:flex;gap:8px}
+.prop-row .prop-input{flex:1}
+.color-row{display:flex;gap:8px;align-items:center}
+.color-pick{width:36px;height:34px;border:1.5px solid var(--light-gray);border-radius:var(--r-sm);cursor:pointer;padding:2px}
+.color-presets{display:flex;gap:4px;flex-wrap:wrap}
+.color-preset{width:22px;height:22px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all .2s}
+.color-preset.active,.color-preset:hover{transform:scale(1.15);border-color:var(--black)}
+.prop-select{
+  width:100%;padding:8px 10px;border:1.5px solid var(--light-gray);border-radius:var(--r-sm);
+  font-size:13px;font-family:inherit;color:var(--black);background:var(--white);outline:none;cursor:pointer;
+}
+.prop-select:focus{border-color:var(--theme-blue)}
+.prop-toggle-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.prop-toggle-label{font-size:12.5px;color:var(--gray)}
+.toggle{width:36px;height:20px;background:var(--light-gray);border-radius:10px;cursor:pointer;position:relative;transition:background .2s;flex-shrink:0}
+.toggle.on{background:var(--theme-blue)}
+.toggle::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:white;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.toggle.on::after{transform:translateX(16px)}
+.prop-img-upload{
+  border:1.5px dashed var(--light-gray);border-radius:var(--r-sm);padding:16px;text-align:center;
+  cursor:pointer;transition:all .2s;font-size:12px;color:var(--gray);
+}
+.prop-img-upload:hover{border-color:var(--theme-blue);color:var(--theme-blue);background:var(--light-blue)}
+.prop-img-upload input{display:none}
+.prop-img-preview{width:100%;border-radius:var(--r-sm);overflow:hidden;position:relative}
+.prop-img-preview img{width:100%;display:block;border-radius:var(--r-sm)}
+.prop-img-preview .remove-img{
+  position:absolute;top:6px;right:6px;background:var(--black-overlay);color:white;
+  border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:12px;
+  display:flex;align-items:center;justify-content:center;
+}
+.rt-toolbar{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px}
+.rt-btn{
+  padding:4px 8px;border:1.5px solid var(--light-gray);border-radius:6px;
+  font-size:11.5px;cursor:pointer;background:white;transition:all .2s;font-family:inherit;color:var(--gray);
+}
+.rt-btn:hover,.rt-btn.active{background:var(--theme-blue);color:white;border-color:var(--theme-blue)}
+.rt-edit{
+  width:100%;min-height:80px;padding:8px 10px;border:1.5px solid var(--light-gray);border-radius:var(--r-sm);
+  font-size:13px;line-height:1.8;outline:none;transition:border-color .2s;
+}
+.rt-edit:focus{border-color:var(--theme-blue)}
+.prop-del-btn{
+  padding:9px;border:1.5px solid var(--light-pink);border-radius:var(--r-sm);
+  background:var(--light-pink);color:var(--sos-red);text-align:center;cursor:pointer;font-size:12.5px;
+  transition:all .2s;margin-top:4px;
+}
+.prop-del-btn:hover{background:var(--sos-red);color:white}
+
+/* ── EXPORT PANEL ── */
+.export-panel{padding:16px;display:flex;flex-direction:column;gap:10px}
+.export-info{font-size:12px;color:var(--gray);line-height:1.8;padding:10px;background:var(--very-light-yellow);border-radius:var(--r-sm)}
+.export-btn-big{
+  padding:13px 16px;border-radius:var(--r-sm);border:none;cursor:pointer;font-size:13px;
+  font-weight:500;font-family:inherit;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.export-btn-big.blue{background:var(--theme-blue);color:white}
+.export-btn-big.blue:hover{opacity: 0.9}
+.export-btn-big.coral{background:var(--pink);color:white}
+.export-btn-big.coral:hover{opacity: 0.9}
+.export-btn-big.outline{background:white;border:1.5px solid var(--light-gray);color:var(--gray)}
+.export-btn-big.outline:hover{border-color:var(--theme-blue);color:var(--theme-blue)}
+.export-sep{font-size:11px;color:var(--gray);text-align:center;padding:4px 0}
+
+/* ── CANVAS AREA ── */
+.canvas-area{
+  flex:1;overflow:auto;background:var(--very-light-gray);
+  display:flex;flex-direction:column;align-items:center;
+  padding:32px 24px;gap:24px;
+}
+.canvas-area::-webkit-scrollbar{width:6px}
+.canvas-area::-webkit-scrollbar-thumb{background:var(--light-gray);border-radius:3px}
+
+.canvas-wrapper{
+  position:relative;flex-shrink:0;
+}
+.canvas-label{
+  font-size:11px;color:var(--gray);text-align:center;margin-bottom:8px;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.canvas-label .cl-num{
+  background:var(--theme-blue);color:white;width:18px;height:18px;
+  border-radius:50%;font-size:10px;display:flex;align-items:center;justify-content:center;
+}
+
+/* The actual canvas: 1242x1660 scaled to fit screen */
+.canvas-frame{
+  width:600px; /* display width */
+  height:800px; /* 1660 / 3.312 ≈ 501.2px */
+  background:white;
+  border-radius: 2px;
+  box-shadow:0 8px 40px rgba(66,170,223,0.2);
+  overflow:hidden;
+  position:relative;
+}
+.canvas-frame.active-canvas{
+  box-shadow:0 0 0 3px var(--theme-blue),0 8px 40px rgba(66,170,223,.2);
+}
+
+/* modules inside canvas */
+.canvas-modules{display:flex;flex-direction:column;height:100%;position:relative}
+.canvas-empty-hint{
+  height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:40px 24px;color:var(--gray);font-size:13px;text-align:center;gap:8px;
+}
+.canvas-empty-hint .icon{font-size:32px;opacity:.4}
+
+/* ── MODULES ── */
+.mod-block{
+  position:relative;cursor:pointer;transition:outline .15s;
+  outline:2px solid transparent;outline-offset:-2px;
+}
+.mod-block:hover{outline-color:rgba(66,170,223,.4)}
+.mod-block.selected{outline-color:var(--theme-blue)}
+.mod-block.drag-over{outline:2px dashed var(--pink);outline-offset:2px}
+
+.mod-drag-handle{
+  position:absolute;left:0;top:50%;transform:translateY(-50%);
+  width:20px;height:100%;display:flex;align-items:center;justify-content:center;
+  opacity:0;transition:opacity .2s;cursor:grab;z-index:10;
+  background:linear-gradient(to right,rgba(66,170,223,.08),transparent);
+}
+.mod-block:hover .mod-drag-handle{opacity:1}
+.mod-drag-handle:active{cursor:grabbing}
+
+/* COVER MODULE */
+.mod-cover{
+  position:relative;width:100%;aspect-ratio:3/4;
+  background:linear-gradient(135deg,var(--theme-blue) 0%,var(--medium-blue) 100%);
+  display:flex;flex-direction:column;align-items:center;justify-content:flex-end;
+  padding:32px 24px;overflow:hidden;
+}
+.mod-cover-bg{position:absolute;inset:0;object-fit:cover;width:100%;height:100%}
+.mod-cover-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.55) 0%,rgba(0,0,0,.1) 60%,transparent 100%)}
+.mod-cover-content{position:relative;z-index:1;text-align:center;width:100%}
+.mod-cover-tag{
+  display:inline-block;background:var(--white-overlay);backdrop-filter:blur(8px);
+  color:white;font-size:13px;padding:4px 12px;border-radius:100px;margin-bottom:12px;letter-spacing:.06em;
+}
+.mod-cover-title{color:white;font-size:48px;font-weight:700;line-height:1.2;margin-bottom:6px;font-family:'Noto Sans SC',sans-serif}
+.mod-cover-subtitle{color:rgba(255,255,255,.8);font-size:18px;line-height:1.5}
+.mod-cover-logo{
+  position:absolute;top:16px;right:16px;z-index:2;
+  background:rgba(255,255,255,.25);backdrop-filter:blur(8px);
+  color:white;font-size:11px;font-weight:600;padding:4px 10px;border-radius:100px;letter-spacing:.04em;
+}
+
+/* IMAGE-TEXT MODULE */
+.mod-imgtext{padding:20px;display:flex;flex-direction:column;gap:14px}
+.mod-imgtext.layout-left{flex-direction:row;align-items:flex-start}
+.mod-imgtext.layout-left .mit-img{width:44%;flex-shrink:0}
+.mod-imgtext.layout-left .mit-text{flex:1}
+.mit-img{border-radius:var(--r-sm);overflow:hidden;background:var(--very-light-yellow);min-height:120px;display:flex;align-items:center;justify-content:center;color:var(--gray);font-size:12px}
+.mit-img img{width:100%;display:block;border-radius:var(--r-sm)}
+.mit-title{font-size:20px;font-weight:700;color:var(--black);margin-bottom:6px;font-family:'Noto Sans SC',sans-serif}
+.mit-body{font-size:15px;color:var(--gray);line-height:1.7}
+
+/* TEXT MODULE */
+.mod-text{padding:20px 24px}
+.mod-text.style-quote{
+  padding:20px 20px 20px 28px;
+  border-left:4px solid var(--theme-blue);
+  background:var(--light-blue);
+}
+.mod-text.style-highlight{background:var(--very-light-yellow);padding:18px 20px;border-radius:0}
+.mod-text.style-title{padding:24px 24px 8px}
+.text-content{font-size:15px;line-height:1.8;color:var(--gray);}
+.text-content.is-title{font-size:36px;font-weight:700;color:var(--black);line-height:1.3;font-family:'Noto Sans SC',sans-serif}
+.text-content.is-quote{font-style:italic;color:var(--theme-blue)}
+
+/* EVENT CARD MODULE */
+.mod-event{padding:16px 20px}
+.event-card{
+  background:linear-gradient(135deg,var(--light-blue) 0%,white 100%);
+  border:1.5px solid var(--theme-blue);border-radius:var(--r);
+  overflow:hidden;
+}
+.event-header{
+  background:var(--theme-blue);padding:14px 18px;
+  display:flex;align-items:center;gap:10px;
+}
+.event-header-icon{font-size:20px}
+.event-header-text{}
+.event-name{color:white;font-size:15px;font-weight:700;font-family:'Noto Sans SC',sans-serif}
+.event-tag-badge{color:rgba(255,255,255,.8);font-size:11px;margin-top:2px}
+.event-body{padding:16px 18px;display:flex;flex-direction:column;gap:10px}
+.event-row{display:flex;align-items:flex-start;gap:10px}
+.event-row-icon{font-size:15px;flex-shrink:0;margin-top:1px}
+.event-row-label{font-size:11px;color:var(--theme-blue);font-weight:600;margin-bottom:2px}
+.event-row-val{font-size:12.5px;color:var(--gray);line-height:1.5}
+.event-footer{padding:0 18px 16px;display:flex;gap:8px}
+.event-btn{
+  flex:1;padding:10px;border-radius:var(--r-sm);text-align:center;
+  font-size:12.5px;font-weight:600;
+}
+.event-btn.primary{background:var(--theme-blue);color:white}
+.event-btn.outline{border:1.5px solid var(--theme-blue);color:var(--theme-blue);background:white}
+
+/* DIVIDER MODULE */
+.mod-divider{padding:12px 24px;display:flex;align-items:center;justify-content:center;gap:12px}
+.div-line{flex:1;height:1px;background:var(--light-gray)}
+.div-icon{font-size:16px;color:var(--gray)}
+.mod-divider.style-thick .div-line{height:3px;border-radius:2px;background:var(--theme-blue)}
+.mod-divider.style-dots .div-line{background:none;border-top:2px dashed var(--light-gray)}
+.mod-divider.style-wave{padding:0}
+
+/* TABLE MODULE */
+.mod-table{padding:16px 20px;overflow-x:auto}
+.data-table{width:100%;border-collapse:collapse;font-size:12.5px;border: 2px solid var(--theme-blue);border-radius: var(--r-sm);overflow: hidden;}
+.data-table th{background:var(--theme-blue);color:white;padding:9px 12px;text-align:left;font-weight:600;font-size:12px}
+.data-table th:first-child{border-radius:var(--r-sm) 0 0 0}
+.data-table th:last-child{border-radius:0 var(--r-sm) 0 0}
+.data-table td{padding:8px 12px;border-bottom:1px solid var(--theme-yellow);color:var(--gray);line-height:1.5}
+.data-table tr:last-child td{border-bottom:none}
+.data-table tr:nth-child(even) td{background:var(--very-light-yellow)}
+.data-table tr:hover td{background:var(--light-blue)}
+
+/* CHECKLIST / TIPS MODULE */
+.mod-checklist{padding:16px 20px;display:flex;flex-direction:column;gap:0}
+.checklist-header{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.checklist-header-icon{font-size:20px}
+.checklist-title{font-size:15px;font-weight:700;color:var(--black);font-family:'Noto Sans SC',sans-serif}
+.checklist-item{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--light-gray)}
+.checklist-item:last-child{border-bottom:none}
+.checklist-bullet{
+  width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;color:white;flex-shrink:0;margin-top:1px;
+}
+.checklist-item-text{font-size:15px;color:var(--gray);line-height:1.8;flex:1}
+.checklist-item-text strong{color:var(--black);font-weight:600}
+.checklist-style-check .checklist-bullet{background:var(--medium-blue);font-size:14px}
+.checklist-style-number .checklist-bullet{background:var(--theme-blue)}
+.checklist-style-star .checklist-bullet{background:var(--pink);font-size:14px}
+
+/* CTA / INTERACTION MODULE */
+.mod-cta{padding:20px}
+.cta-card{
+  border-radius:var(--r);padding:20px;text-align:center;
+  background:linear-gradient(135deg,var(--very-light-yellow) 0%,var(--very-light-yellow) 100%);
+  border:1.5px solid var(--orange);
+}
+.cta-emoji{font-size:28px;margin-bottom:8px}
+.cta-title{font-size:15px;font-weight:700;color:var(--black);margin-bottom:6px;font-family:'Noto Sans SC',sans-serif}
+.cta-body{font-size:13px;color:var(--gray);line-height:1.7;margin-bottom:14px}
+.cta-tags{display:flex;flex-wrap:wrap;justify-content:center;gap:6px}
+.cta-tag{
+  padding:5px 12px;border-radius:100px;font-size:12px;font-weight:500;
+  background:white;border:1.5px solid var(--pink);color:var(--pink);
+}
+
+/* drag ghost */
+.drag-ghost{opacity:.4}
+
+/* ── MODALS ── */
+.modal-overlay{
+  position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.4);
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;pointer-events:none;transition:opacity .2s;
+}
+.modal-overlay.show{opacity:1;pointer-events:all}
+.modal{
+  background:white;border-radius:var(--r);padding:28px;width:500px;max-width:90vw;
+  max-height:80vh;overflow-y:auto;transform:scale(.95);transition:transform .2s;box-shadow:0 20px 60px rgba(0,0,0,.2);
+}
+.modal-overlay.show .modal{transform:scale(1)}
+.modal-title{font-size:16px;font-weight:700;margin-bottom:20px;color:var(--black)}
+.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:20px}
+.code-output{
+  width:100%;height:200px;padding:12px;border:1.5px solid var(--light-gray);border-radius:var(--r-sm);
+  font-size:11.5px;font-family:monospace;resize:vertical;color:var(--black);outline:none;
+  background:var(--very-light-gray);
+}
+
+/* ── TOAST ── */
+.toast{
+  position:fixed;bottom:24px;right:24px;z-index:300;
+  background:var(--black-toast);color:white;padding:10px 20px;border-radius:100px;
+  font-size:13px;opacity:0;transform:translateY(8px);transition:all .3s;pointer-events:none;
+}
+.toast.show{opacity:1;transform:translateY(0)}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <a class="topbar-back" href="index.html">← 返回</a>
+  <div class="topbar-sep"></div>
+  <div class="topbar-brand"><div class="dot"></div>BOND 图文排版</div>
+  <div class="topbar-sep"></div>
+  <span class="topbar-title">小红书 · 公众号模块化排版工具</span>
+  <div class="topbar-actions">
+    <button class="btn btn-ghost" onclick="saveDraft()">💾 保存草稿</button>
+    <label class="btn btn-ghost" style="cursor:pointer">📂 载入草稿<input type="file" accept=".json" onchange="loadDraft(event)" style="display:none"/></label>
+    <button class="btn btn-coral" onclick="showExportModal()">📤 导出</button>
+  </div>
+</div>
+
+<div class="app">
+
+  <!-- LEFT SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-tabs">
+      <div class="stab active" onclick="switchTab('canvases',this)">画布</div>
+      <div class="stab" onclick="switchTab('modules',this)">模块库</div>
+      <div class="stab" onclick="switchTab('props',this)">属性</div>
+      <div class="stab" onclick="switchTab('export',this)">导出</div>
+    </div>
+
+    <!-- CANVAS TAB -->
+    <div class="sidebar-panel active" id="tab-canvases">
+      <div class="canvas-list" id="canvas-list"></div>
+      <div class="add-canvas-btn" onclick="addCanvas()">＋ 新增画布</div>
+    </div>
+
+    <!-- MODULES TAB -->
+    <div class="sidebar-panel" id="tab-modules">
+      <div class="module-lib">
+        <div class="mod-group-title">基础</div>
+        <div class="mod-item" onclick="addModule('cover')">
+          <div class="mod-icon" style="background:rgba(66,170,223,.1)">🖼️</div>
+          <div class="mod-info"><div class="mod-name">封面模块</div><div class="mod-desc">标题 + 背景图，全幅展示</div></div>
+        </div>
+        <div class="mod-item" onclick="addModule('imgtext')">
+          <div class="mod-icon" style="background:rgba(168,216,192,.2)">📸</div>
+          <div class="mod-info"><div class="mod-name">图文模块</div><div class="mod-desc">图片 + 文字说明</div></div>
+        </div>
+        <div class="mod-item" onclick="addModule('text')">
+          <div class="mod-icon" style="background:rgba(245,230,200,.5)">📝</div>
+          <div class="mod-info"><div class="mod-name">文字模块</div><div class="mod-desc">段落 / 标题 / 引用</div></div>
+        </div>
+        <div class="mod-group-title">内容</div>
+        <div class="mod-item" onclick="addModule('event')">
+          <div class="mod-icon" style="background:rgba(242,132,92,.1)">📅</div>
+          <div class="mod-info"><div class="mod-name">活动卡片</div><div class="mod-desc">时间 / 地点 / 报名信息</div></div>
+        </div>
+        <div class="mod-item" onclick="addModule('table')">
+          <div class="mod-icon" style="background:rgba(66,170,223,.1)">📊</div>
+          <div class="mod-info"><div class="mod-name">表格模块</div><div class="mod-desc">多列数据对比展示</div></div>
+        </div>
+        <div class="mod-group-title">装饰</div>
+        <div class="mod-item" onclick="addModule('divider')">
+          <div class="mod-icon" style="background:rgba(245,230,200,.5)">〰️</div>
+          <div class="mod-info"><div class="mod-name">分隔装饰</div><div class="mod-desc">分隔线 / 装饰元素</div></div>
+        </div>
+        <div class="mod-group-title">互动</div>
+        <div class="mod-item" onclick="addModule('checklist')">
+          <div class="mod-icon" style="background:rgba(168,216,192,.2)">✅</div>
+          <div class="mod-info"><div class="mod-name">清单 / Tips</div><div class="mod-desc">编号要点、行动清单</div></div>
+        </div>
+        <div class="mod-item" onclick="addModule('cta')">
+          <div class="mod-icon" style="background:rgba(242,132,92,.1)">💬</div>
+          <div class="mod-info"><div class="mod-name">互动引导</div><div class="mod-desc">评论引导、话题标签</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROPS TAB -->
+    <div class="sidebar-panel" id="tab-props">
+      <div class="prop-panel" id="prop-panel">
+        <div class="prop-empty">
+          <div class="icon">✏️</div>
+          <div>点击画布中的模块<br/>在此编辑属性</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- EXPORT TAB -->
+    <div class="sidebar-panel" id="tab-export">
+      <div class="export-panel">
+        <div class="export-info">💡 PNG 适用于小红书上传；公众号 HTML 可直接粘贴到微信公众号编辑器。</div>
+        <button class="export-btn-big blue" onclick="exportCurrentPNG()">🖼️ 导出当前画布 PNG</button>
+        <button class="export-btn-big outline" onclick="exportAllPNG()">📦 批量导出全部 PNG</button>
+        <div class="export-sep">── 公众号长文 ──</div>
+        <button class="export-btn-big coral" onclick="exportHTML()">📋 复制公众号 HTML</button>
+        <button class="export-btn-big outline" onclick="showHTMLPreview()">👁 预览 HTML 代码</button>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- CANVAS AREA -->
+  <div class="canvas-area" id="canvas-area"></div>
+
+</div>
+
+<!-- HTML PREVIEW MODAL -->
+<div class="modal-overlay" id="html-modal">
+  <div class="modal">
+    <div class="modal-title">公众号 HTML 代码</div>
+    <textarea class="code-output" id="html-code-output" readonly></textarea>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">关闭</button>
+      <button class="btn btn-primary" onclick="copyHTMLCode()">复制代码</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- MEASURE CONTAINER (Hidden) -->
+<div id="measure-container" style="position:absolute;top:-9999px;left:-9999px;width:375px;visibility:hidden;pointer-events:none;"></div>
+
+<script>
+// ═══════════════════════════════
+//  STATE
+// ═══════════════════════════════
+let state = {
+  canvases: [],
+  activeCanvas: 0,
+  selectedModule: null, // {canvasIdx, modIdx}
+  reflowing: false,
+};
+
+const CANVAS_HEIGHT = 501;
+
+// ═══════════════════════════════
+//  INIT
+// ═══════════════════════════════
+function init(){
+  addCanvas();
+  renderCanvasList();
+  renderCanvasArea();
+}
+
+// ═══════════════════════════════
+//  REFLOW LOGIC
+// ═══════════════════════════════
+function measureModuleHeight(mod){
+  const container = document.getElementById('measure-container');
+  // We need to render the module content into the measure container
+  // Note: we don't need the wrapper .mod-block here, just the inner content
+  container.innerHTML = `<div class="mod-block">${renderModuleContent(mod)}</div>`;
+  const height = container.offsetHeight;
+  container.innerHTML = '';
+  return height;
+}
+
+function reflowAll(){
+  if(state.reflowing) return;
+  state.reflowing = true;
+
+  // 1. Flatten all modules
+  let allModules = [];
+  state.canvases.forEach(c => {
+    allModules = allModules.concat(c.modules);
+  });
+
+  // 2. Redistribute modules into canvases
+  let newCanvases = [];
+  let currentCanvasModules = [];
+  let currentHeight = 0;
+
+  allModules.forEach((mod, idx) => {
+    const modHeight = measureModuleHeight(mod);
+    
+    if (currentHeight + modHeight > CANVAS_HEIGHT && currentCanvasModules.length > 0) {
+      // Current canvas is full, start a new one
+      newCanvases.push({
+        name: `画布 ${newCanvases.length + 1}`,
+        modules: currentCanvasModules
+      });
+      currentCanvasModules = [mod];
+      currentHeight = modHeight;
+    } else {
+      currentCanvasModules.push(mod);
+      currentHeight += modHeight;
+    }
+  });
+
+  // Push the last canvas
+  if (currentCanvasModules.length > 0 || newCanvases.length === 0) {
+    newCanvases.push({
+      name: `画布 ${newCanvases.length + 1}`,
+      modules: currentCanvasModules
+    });
+  }
+
+  // 3. Update state
+  state.canvases = newCanvases;
+  
+  // Adjust activeCanvas if it's now out of bounds
+  if (state.activeCanvas >= state.canvases.length) {
+    state.activeCanvas = state.canvases.length - 1;
+  }
+
+  // Clear selection if it's now invalid
+  if (state.selectedModule) {
+    // Try to find the selected module in the new structure
+    // This is tricky without unique IDs. Let's assume for now 
+    // we just clear it to avoid crashes, or we could add IDs to modules.
+    state.selectedModule = null; 
+  }
+
+  renderCanvasList();
+  renderCanvasArea();
+  renderProps();
+  
+  state.reflowing = false;
+}
+
+// ═══════════════════════════════
+//  CANVAS MANAGEMENT
+// ═══════════════════════════════
+function addCanvas(){
+  const idx = state.canvases.length + 1;
+  state.canvases.push({name:`画布 ${idx}`, modules:[]});
+  state.activeCanvas = state.canvases.length - 1;
+  state.selectedModule = null;
+  renderCanvasList();
+  renderCanvasArea();
+}
+
+function deleteCanvas(idx, e){
+  e.stopPropagation();
+  if(state.canvases.length === 1){toast('至少保留一张画布');return;}
+  state.canvases.splice(idx,1);
+  if(state.activeCanvas >= state.canvases.length) state.activeCanvas = state.canvases.length - 1;
+  state.selectedModule = null;
+  renderCanvasList();
+  renderCanvasArea();
+}
+
+function selectCanvas(idx){
+  state.activeCanvas = idx;
+  state.selectedModule = null;
+  renderCanvasList();
+  renderCanvasArea();
+  renderProps();
+}
+
+function renderCanvasList(){
+  const list = document.getElementById('canvas-list');
+  list.innerHTML = state.canvases.map((c,i)=>`
+    <div class="canvas-item ${i===state.activeCanvas?'active':''}" onclick="selectCanvas(${i})">
+      <div class="canvas-thumb" id="thumb-${i}">
+        <span style="font-size:9px;text-align:center;padding:2px">${c.modules.length?'':'空'}</span>
+      </div>
+      <div class="canvas-info">
+        <div class="canvas-name">${c.name}</div>
+        <div class="canvas-sub">${c.modules.length} 个模块</div>
+      </div>
+      <span class="canvas-del" onclick="deleteCanvas(${i},event)">×</span>
+    </div>
+  `).join('');
+}
+
+// ═══════════════════════════════
+//  MODULE DEFAULTS
+// ═══════════════════════════════
+function defaultModule(type){
+  const defaults = {
+    cover:{type:'cover',bgColor:'#42aadf',bgImage:'',tag:'🐾 BOND 观察',title:'宠物友好\n快撑不住了？',subtitle:'上海商场禁入 · 北京史上最严新规',showLogo:true},
+    imgtext:{type:'imgtext',layout:'top',image:'',title:'到底发生了什么？',body:'上海兴业太古汇、港汇恒隆——曾经的宠物友好标杆，一夜之间撤下标识、拆掉推车租赁点。北京最新草案更是明确：商场、公园、地铁<strong>一律禁止携犬进入</strong>，违规最高罚款5000元。🐶'},
+    text:{type:'text',style:'normal',content:'这不是个别城市的偶发事件，而是一场<strong>全国性的政策转向</strong>。9000亿的"它经济"、1.26亿只毛孩子，正在经历前所未有的公共空间争夺战。'},
+    event:{type:'event',name:'春日宠物派对',tag:'🆓 免费参与',time:'2025年4月28日 周日 14:00–17:00',location:'朝阳公园东门广场（地铁6号线朝阳公园站B口）',price:'免费，限额100组家庭',contact:'评论区留言「报名」或扫码登记',btnPrimary:'立即报名 →',btnOutline:'查看攻略'},
+    divider:{type:'divider',style:'line',icon:'🐾'},
+    table:{type:'table',headers:['城市','宠物进商场','处罚力度'],rows:[['上海','明确禁止（2026修订）','警告+罚款'],['北京','草案拟全面禁入','没收+5年禁养'],['广州','经营者自主决定','无统一规定'],['成都','设专属泊狗位','鼓励规范管理']]},
+    checklist:{type:'checklist',style:'number',title:'养宠人能做什么？',items:[{text:'<strong>参与发声</strong> · 北京草案征集意见截至5月7日，为毛孩子争取合规奔跑空间'},{text:'<strong>牵好绳、捡好便</strong> · 每一次文明举动都在为公共空间投票'},{text:'<strong>支持好商场</strong> · 用脚投票，选择真正投入资源的宠物友好场所'},]},
+    cta:{type:'cta',emoji:'💬',title:'你怎么看？',body:'你的城市里，带毛孩子去哪里最安心？那个总笑着递捡屎袋的保安叔叔、那家会调"爪布奇诺"的街角咖啡……',tags:['#宠物友好','#北京养犬新规','#铲屎官必看','#BOND']},
+  };
+  return JSON.parse(JSON.stringify(defaults[type]));
+}
+
+// ═══════════════════════════════
+//  MODULE ACTIONS
+// ═══════════════════════════════
+function addModule(type){
+  const mod = defaultModule(type);
+  state.canvases[state.activeCanvas].modules.push(mod);
+  reflowAll();
+  switchTab('props', document.querySelectorAll('.stab')[2]);
+}
+
+function deleteModule(canvasIdx, modIdx){
+  state.canvases[canvasIdx].modules.splice(modIdx,1);
+  reflowAll();
+}
+
+function selectModule(canvasIdx, modIdx){
+  state.selectedModule = {canvasIdx, modIdx};
+  renderCanvasArea();
+  renderProps();
+  switchTab('props', document.querySelectorAll('.stab')[2]);
+}
+
+// ═══════════════════════════════
+//  RENDER CANVAS AREA
+// ═══════════════════════════════
+function renderCanvasArea(){
+  const area = document.getElementById('canvas-area');
+  area.innerHTML = state.canvases.map((canvas, ci)=>`
+    <div class="canvas-wrapper" id="canvas-wrapper-${ci}">
+      <div class="canvas-label">
+        <span class="cl-num">${ci+1}</span>
+        ${canvas.name}
+      </div>
+      <div class="canvas-frame ${ci===state.activeCanvas?'active-canvas':''}" id="canvas-${ci}" onclick="selectCanvas(${ci})">
+        <div class="canvas-modules" id="modules-${ci}">
+          ${canvas.modules.length ? canvas.modules.map((m,mi)=>renderModuleHTML(m,ci,mi)).join('') :
+            `<div class="canvas-empty-hint"><div class="icon">✦</div><div>从左侧模块库<br/>点击添加模块</div></div>`}
+        </div>
+      </div>
+    </div>
+  `).join('');
+
+  // bind drag events after render
+  state.canvases.forEach((canvas, ci)=>{
+    canvas.modules.forEach((m, mi)=>{
+      const el = document.getElementById(`mod-${ci}-${mi}`);
+      if(el) bindDrag(el, ci, mi);
+    });
+  });
+}
+
+function renderModuleHTML(mod, ci, mi){
+  const sel = state.selectedModule;
+  const isSelected = sel && sel.canvasIdx===ci && sel.modIdx===mi;
+  return `<div class="mod-block ${isSelected?'selected':''}" id="mod-${ci}-${mi}"
+    draggable="true"
+    onclick="event.stopPropagation();selectModule(${ci},${mi})">
+    <div class="mod-drag-handle" title="拖拽排序">⠿</div>
+    ${renderModuleContent(mod, ci, mi)}
+  </div>`;
+}
+
+function renderModuleContent(mod, ci, mi){
+  switch(mod.type){
+    case 'cover': return renderCover(mod);
+    case 'imgtext': return renderImgText(mod);
+    case 'text': return renderText(mod);
+    case 'event': return renderEvent(mod);
+    case 'divider': return renderDivider(mod);
+    case 'table': return renderTable(mod);
+    case 'checklist': return renderChecklist(mod);
+    case 'cta': return renderCta(mod);
+    default: return '';
+  }
+}
+
+function renderCover(m){
+  const overlayStyle = m.bgImage ? '' : 'display:none';
+  const bgStyle = m.bgImage
+    ? `background:url('${m.bgImage}') center/cover no-repeat`
+    : `background:${m.bgColor||'#42AADF'}`;
+  return `<div class="mod-cover" style="${bgStyle}">
+    ${m.bgImage?`<div class="mod-cover-overlay"></div>`:''}
+    ${m.showLogo?`<div class="mod-cover-logo">BOND</div>`:''}
+    <div class="mod-cover-content">
+      ${m.tag?`<div class="mod-cover-tag">${m.tag}</div>`:''}
+      <div class="mod-cover-title">${m.title||'标题'}</div>
+      ${m.subtitle?`<div class="mod-cover-subtitle">${m.subtitle}</div>`:''}
+    </div>
+  </div>`;
+}
+
+function renderImgText(m){
+  const layoutClass = m.layout==='left'?'layout-left':'';
+  return `<div class="mod-imgtext ${layoutClass}">
+    ${m.image ? `
+    <div class="mit-img">
+      <img src="${m.image}" alt=""/>
+    </div>` : ''}
+    <div class="mit-text">
+      ${m.title?`<div class="mit-title">${m.title}</div>`:''}
+      <div class="mit-body">${m.body||''}</div>
+    </div>
+  </div>`;
+}
+
+function renderText(m){
+  const styleClass = `style-${m.style||'normal'}`;
+  const contentClass = m.style==='title'?'is-title':m.style==='quote'?'is-quote':'';
+  return `<div class="mod-text ${styleClass}">
+    <div class="text-content ${contentClass}">${m.content||''}</div>
+  </div>`;
+}
+
+function renderEvent(m){
+  return `<div class="mod-event">
+    <div class="event-card">
+      <div class="event-header">
+        <div class="event-header-icon">🐾</div>
+        <div class="event-header-text">
+          <div class="event-name">${m.name||'活动名称'}</div>
+          ${m.tag?`<div class="event-tag-badge">${m.tag}</div>`:''}
+        </div>
+      </div>
+      <div class="event-body">
+        ${m.time?`<div class="event-row"><span class="event-row-icon">🕐</span><div><div class="event-row-label">时间</div><div class="event-row-val">${m.time}</div></div></div>`:''}
+        ${m.location?`<div class="event-row"><span class="event-row-icon">📍</span><div><div class="event-row-label">地点</div><div class="event-row-val">${m.location}</div></div></div>`:''}
+        ${m.price?`<div class="event-row"><span class="event-row-icon">💰</span><div><div class="event-row-label">费用</div><div class="event-row-val">${m.price}</div></div></div>`:''}
+        ${m.contact?`<div class="event-row"><span class="event-row-icon">📱</span><div><div class="event-row-label">报名</div><div class="event-row-val">${m.contact}</div></div></div>`:''}
+      </div>
+      <div class="event-footer">
+        ${m.btnPrimary?`<div class="event-btn primary">${m.btnPrimary}</div>`:''}
+        ${m.btnOutline?`<div class="event-btn outline">${m.btnOutline}</div>`:''}
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderDivider(m){
+  const styleClass = `style-${m.style||'line'}`;
+  return `<div class="mod-divider ${styleClass}">
+    <div class="div-line"></div>
+    ${m.icon?`<span class="div-icon">${m.icon}</span>`:''}
+    <div class="div-line"></div>
+  </div>`;
+}
+
+function renderTable(m){
+  if(!m.headers||!m.rows) return '';
+  return `<div class="mod-table">
+    <table class="data-table">
+      <thead><tr>${m.headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead>
+      <tbody>${m.rows.map(row=>`<tr>${row.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</tbody>
+    </table>
+  </div>`;
+}
+
+function renderChecklist(m){
+  const styleClass = `checklist-style-${m.style||'number'}`;
+  const bulletMap = {number: i=>i+1, check: ()=>'✓', star: ()=>'★'};
+  const bullet = bulletMap[m.style||'number'];
+  const colors = ['#42aadf','#f35d55','#97d9f9','#ff8800','#ffde00','#86909c'];
+  return `<div class="mod-checklist">
+    ${m.title?`<div class="checklist-header">
+      <span class="checklist-header-icon">${m.style==='check'?'✅':m.style==='star'?'⭐':'📋'}</span>
+      <div class="checklist-title">${m.title}</div>
+    </div>`:''}
+    <div class="${styleClass}">
+      ${(m.items||[]).map((item,i)=>`
+        <div class="checklist-item">
+          <div class="checklist-bullet" style="background:${colors[i%colors.length]}">${bullet(i)}</div>
+          <div class="checklist-item-text">${item.text||''}</div>
+        </div>
+      `).join('')}
+    </div>
+  </div>`;
+}
+
+function renderCta(m){
+  return `<div class="mod-cta">
+    <div class="cta-card">
+      ${m.emoji?`<div class="cta-emoji">${m.emoji}</div>`:''}
+      ${m.title?`<div class="cta-title">${m.title}</div>`:''}
+      ${m.body?`<div class="cta-body">${m.body}</div>`:''}
+      ${m.tags&&m.tags.length?`<div class="cta-tags">${m.tags.map(t=>`<span class="cta-tag">${t}</span>`).join('')}</div>`:''}
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════
+//  DRAG & DROP
+// ═══════════════════════════════
+let dragSrc = null;
+
+function bindDrag(el, ci, mi){
+  el.addEventListener('dragstart', e=>{
+    dragSrc = {ci, mi};
+    setTimeout(()=>el.classList.add('drag-ghost'), 0);
+    e.dataTransfer.effectAllowed = 'move';
+  });
+  el.addEventListener('dragend', ()=>{
+    el.classList.remove('drag-ghost');
+    document.querySelectorAll('.drag-over').forEach(x=>x.classList.remove('drag-over'));
+  });
+  el.addEventListener('dragover', e=>{
+    e.preventDefault();
+    if(!dragSrc || (dragSrc.ci===ci && dragSrc.mi===mi)) return;
+    el.classList.add('drag-over');
+  });
+  el.addEventListener('dragleave', ()=>el.classList.remove('drag-over'));
+  el.addEventListener('drop', e=>{
+    e.preventDefault();
+    el.classList.remove('drag-over');
+    if(!dragSrc || dragSrc.ci!==ci) return;
+    const mods = state.canvases[ci].modules;
+    const [moved] = mods.splice(dragSrc.mi, 1);
+    mods.splice(mi, 0, moved);
+    dragSrc = null;
+    reflowAll();
+  });
+}
+
+// ═══════════════════════════════
+//  PROPERTY PANEL
+// ═══════════════════════════════
+function renderProps(){
+  const panel = document.getElementById('prop-panel');
+  if(!state.selectedModule){
+    panel.innerHTML = `<div class="prop-empty"><div class="icon">✏️</div><div>点击画布中的模块<br/>在此编辑属性</div></div>`;
+    return;
+  }
+  const {canvasIdx, modIdx} = state.selectedModule;
+  const mod = state.canvases[canvasIdx].modules[modIdx];
+  if(!mod) return;
+  switch(mod.type){
+    case 'cover': panel.innerHTML = propsCover(mod, canvasIdx, modIdx); break;
+    case 'imgtext': panel.innerHTML = propsImgText(mod, canvasIdx, modIdx); break;
+    case 'text': panel.innerHTML = propsText(mod, canvasIdx, modIdx); break;
+    case 'event': panel.innerHTML = propsEvent(mod, canvasIdx, modIdx); break;
+    case 'divider': panel.innerHTML = propsDivider(mod, canvasIdx, modIdx); break;
+    case 'table': panel.innerHTML = propsTable(mod, canvasIdx, modIdx); break;
+    case 'checklist': panel.innerHTML = propsChecklist(mod, canvasIdx, modIdx); break;
+    case 'cta': panel.innerHTML = propsCta(mod, canvasIdx, modIdx); break;
+  }
+  // rebind rich text if present
+  document.querySelectorAll('.rt-edit').forEach(el=>{
+    el.addEventListener('input', ()=>{
+      const field = el.dataset.field;
+      const m = state.canvases[canvasIdx].modules[modIdx];
+      m[field] = el.innerHTML;
+      refreshModuleDOM(canvasIdx, modIdx);
+    });
+  });
+  // bind image uploads
+  document.querySelectorAll('.img-upload-input').forEach(inp=>{
+    inp.addEventListener('change', e=>{
+      const file = e.target.files[0];
+      if(!file) return;
+      const reader = new FileReader();
+      reader.onload = ev=>{
+        const field = inp.dataset.field;
+        state.canvases[canvasIdx].modules[modIdx][field] = ev.target.result;
+        reflowAll();
+      };
+      reader.readAsDataURL(file);
+    });
+  });
+}
+
+function propField(label, html){ return `<div class="prop-section"><div class="prop-label">${label}</div>${html}</div>`; }
+
+function rtField(field, value, label){
+  return `<div class="prop-section">
+    <div class="prop-label">${label}</div>
+    <div class="rt-toolbar">
+      <button class="rt-btn" onclick="rtCmd('bold')"><b>B</b></button>
+      <button class="rt-btn" onclick="rtCmd('italic')"><i>I</i></button>
+      <button class="rt-btn" onclick="rtCmd('underline')"><u>U</u></button>
+      <button class="rt-btn" onclick="rtCmd('strikeThrough')"><s>S</s></button>
+      <button class="rt-btn" onclick="rtFontSize(20)">大</button>
+      <button class="rt-btn" onclick="rtFontSize(13)">小</button>
+      <button class="rt-btn" onclick="rtColor('#42aadf')">🔵</button>
+      <button class="rt-btn" onclick="rtColor('#f35d55')">�</button>
+      <button class="rt-btn" onclick="rtColor('#1d2129')">⚫</button>
+    </div>
+    <div class="rt-edit" contenteditable="true" data-field="${field}">${value||''}</div>
+  </div>`;
+}
+
+function imgField(field, value, label){
+  if(value){
+    return `<div class="prop-section"><div class="prop-label">${label}</div>
+      <div class="prop-img-preview">
+        <img src="${value}" alt=""/>
+        <button class="remove-img" onclick="clearImg('${field}')">×</button>
+      </div></div>`;
+  }
+  return `<div class="prop-section"><div class="prop-label">${label}</div>
+    <label class="prop-img-upload">
+      <input class="img-upload-input" type="file" accept="image/*" data-field="${field}"/>
+      📷 点击上传图片
+    </label></div>`;
+}
+
+function clearImg(field){
+  const {canvasIdx, modIdx} = state.selectedModule;
+  state.canvases[canvasIdx].modules[modIdx][field] = '';
+  reflowAll();
+}
+
+function propsCover(m, ci, mi){
+  return `
+    ${propField('标签文字', `<input class="prop-input" value="${m.tag||''}" oninput="updateMod('tag',this.value,${ci},${mi})"/>`)}
+    ${propField('主标题', `<input class="prop-input" value="${escAttr(m.title)}" oninput="updateMod('title',this.value,${ci},${mi})"/>`)}
+    ${propField('副标题', `<input class="prop-input" value="${escAttr(m.subtitle)}" oninput="updateMod('subtitle',this.value,${ci},${mi})"/>`)}
+    ${imgField('bgImage', m.bgImage, '背景图片')}
+    ${!m.bgImage ? propField('背景颜色', `<div class="color-row">
+      <input type="color" class="color-pick" value="${m.bgColor||'#42aadf'}" oninput="updateMod('bgColor',this.value,${ci},${mi})"/>
+      <div class="color-presets">
+        ${['#42aadf','#f35d55','#97d9f9','#fff4ae','#ff8800','#ffde00'].map(c=>`
+          <div class="color-preset ${m.bgColor===c?'active':''}" style="background:${c}" onclick="updateMod('bgColor','${c}',${ci},${mi});renderProps()"></div>
+        `).join('')}
+      </div>
+    </div>`) : ''}
+    ${propField('显示BOND标识', `<div class="prop-toggle-row"><span class="prop-toggle-label">右上角品牌标</span>
+      <div class="toggle ${m.showLogo?'on':''}" onclick="toggleMod('showLogo',${ci},${mi})"></div></div>`)}
+    <div class="prop-del-btn" onclick="deleteModule(${ci},${mi})">🗑 删除此模块</div>`;
+}
+
+function propsImgText(m, ci, mi){
+  return `
+    ${propField('布局方式', `<select class="prop-select" onchange="updateMod('layout',this.value,${ci},${mi})">
+      <option value="top" ${m.layout==='top'?'selected':''}>图上文下</option>
+      <option value="left" ${m.layout==='left'?'selected':''}>图左文右</option>
+    </select>`)}
+    ${imgField('image', m.image, '图片')}
+    ${propField('小标题', `<input class="prop-input" value="${escAttr(m.title)}" oninput="updateMod('title',this.value,${ci},${mi})"/>`)}
+    ${rtField('body', m.body, '正文内容')}
+    <div class="prop-del-btn" onclick="deleteModule(${ci},${mi})">🗑 删除此模块</div>`;
+}
+
+function propsText(m, ci, mi){
+  return `
+    ${propField('文字样式', `<select class="prop-select" onchange="updateMod('style',this.value,${ci},${mi})">
+      <option value="normal" ${m.style==='normal'?'selected':''}>普通段落</option>
+      <option value="title" ${m.style==='title'?'selected':''}>大标题</option>
+      <option value="quote" ${m.style==='quote'?'selected':''}>引用块</option>
+      <option value="highlight" ${m.style==='highlight'?'selected':''}>高亮背景</option>
+    </select>`)}
+    ${rtField('content', m.content, '文字内容')}
+    <div class="prop-del-btn" onclick="deleteModule(${ci},${mi})">🗑 删除此模块</div>`;
+}
+
+function propsEvent(m, ci, mi){
+  return `
+    ${propField('活动名称', `<input class="prop-input" value="${escAttr(m.name)}" oninput="updateMod('name',this.value,${ci},${mi})"/>`)}
+    ${propField('标签', `<input class="prop-input" value="${escAttr(m.tag)}" oninput="updateMod('tag',this.value,${ci},${mi})"/>`)}
+    ${propField('时间', `<input class="prop-input" value="${escAttr(m.time)}" oninput="updateMod('time',this.value,${ci},${mi})"/>`)}
+    ${propField('地点', `<input class="prop-input" value="${escAttr(m.location)}" oninput="updateMod('location',this.value,${ci},${mi})"/>`)}
+    ${propField('费用', `<input class="prop-input" value="${escAttr(m.price)}" oninput="updateMod('price',this.value,${ci},${mi})"/>`)}
+    ${propField('报名方式', `<input class="prop-input" value="${escAttr(m.contact)}" oninput="updateMod('contact',this.value,${ci},${mi})"/>`)}
+    ${propField('主按钮文字', `<input class="prop-input" value="${escAttr(m.btnPrimary)}" oninput="updateMod('btnPrimary',this.value,${ci},${mi})"/>`)}
+    ${propField('次按钮文字', `<input class="prop-input" value="${escAttr(m.btnOutline)}" oninput="updateMod('btnOutline',this.value,${ci},${mi})"/>`)}
+    <div class="prop-del-btn" onclick="deleteModule(${ci},${mi})">🗑 删除此模块</div>`;
+}
+
+function propsDivider(m, ci, mi){
+  return `
+    ${propField('样式', `<select class="prop-select" onchange="updateMod('style',this.value,${ci},${mi})">
+      <option value="line" ${m.style==='line'?'selected':''}>细线</option>
+      <option value="thick" ${m.style==='thick'?'selected':''}>粗线（品牌色）</option>
+      <option value="dots" ${m.style==='dots'?'selected':''}>虚线</option>
+    </select>`)}
+    ${propField('中间图标', `<input class="prop-input" value="${escAttr(m.icon)}" placeholder="留空则无图标" oninput="updateMod('icon',this.value,${ci},${mi})"/>`)}
+    <div class="prop-del-btn" onclick="deleteModule(${ci},${mi})">🗑 删除此模块</div>`;
+}
+
+function propsTable(m, ci, mi){
+  const headersStr = (m.headers||[]).join('|');
+  const rowsStr = (m.rows||[]).map(r=>r.join('|')).join('\n');
+  return `
+    ${propField('列标题（用 | 分隔）', `<input class="prop-input" value="${escAttr(headersStr)}" oninput="updateTableHeaders(this.value,${ci},${mi})"/>`)}
+    ${propField('数据行（每行一行，列用 | 分隔）', `<textarea class="prop-input prop-textarea" oninput="updateTableRows(this.value,${ci},${mi})">${escAttr(rowsStr)}</textarea>`)}
+    <div class="prop-del-btn" onclick="deleteModule(${ci},${mi})">🗑 删除此模块</div>`;
+}
+
+function propsChecklist(m, ci, mi){
+  const itemsStr = (m.items||[]).map(item=>item.text).join('\n');
+  return `
+    ${propField('标题', `<input class="prop-input" value="${escAttr(m.title)}" oninput="updateMod('title',this.value,${ci},${mi})"/>`)}
+    ${propField('列表样式', `<select class="prop-select" onchange="updateMod('style',this.value,${ci},${mi})">
+      <option value="number" ${m.style==='number'?'selected':''}>编号（1 2 3）</option>
+      <option value="check" ${m.style==='check'?'selected':''}>勾选（✓）</option>
+      <option value="star" ${m.style==='star'?'selected':''}>星标（★）</option>
+    </select>`)}
+    ${propField('条目内容（每行一条，支持 <strong> 加粗）', `<textarea class="prop-input prop-textarea" style="min-height:120px" oninput="updateChecklistItems(this.value,${ci},${mi})">${escAttr(itemsStr)}</textarea>`)}
+    <div class="prop-del-btn" onclick="deleteModule(${ci},${mi})">🗑 删除此模块</div>`;
+}
+
+function propsCta(m, ci, mi){
+  const tagsStr = (m.tags||[]).join(' ');
+  return `
+    ${propField('表情符号', `<input class="prop-input" value="${escAttr(m.emoji)}" oninput="updateMod('emoji',this.value,${ci},${mi})"/>`)}
+    ${propField('标题', `<input class="prop-input" value="${escAttr(m.title)}" oninput="updateMod('title',this.value,${ci},${mi})"/>`)}
+    ${propField('引导文字', `<textarea class="prop-input prop-textarea" oninput="updateMod('body',this.value,${ci},${mi})">${escAttr(m.body)}</textarea>`)}
+    ${propField('话题标签（空格分隔）', `<input class="prop-input" value="${escAttr(tagsStr)}" oninput="updateCtaTags(this.value,${ci},${mi})"/>`)}
+    <div class="prop-del-btn" onclick="deleteModule(${ci},${mi})">🗑 删除此模块</div>`;
+}
+
+// ═══════════════════════════════
+//  UPDATE HELPERS
+// ═══════════════════════════════
+function updateMod(field, value, ci, mi){
+  state.canvases[ci].modules[mi][field] = value;
+  reflowAll();
+}
+
+function toggleMod(field, ci, mi){
+  state.canvases[ci].modules[mi][field] = !state.canvases[ci].modules[mi][field];
+  reflowAll();
+}
+
+function updateTableHeaders(value, ci, mi){
+  state.canvases[ci].modules[mi].headers = value.split('|').map(s=>s.trim());
+  reflowAll();
+}
+
+function updateTableRows(value, ci, mi){
+  state.canvases[ci].modules[mi].rows = value.split('\n').filter(Boolean).map(r=>r.split('|').map(s=>s.trim()));
+  reflowAll();
+}
+
+function updateChecklistItems(value, ci, mi){
+  state.canvases[ci].modules[mi].items = value.split('\n').filter(Boolean).map(t=>({text:t.trim()}));
+  reflowAll();
+}
+
+function updateCtaTags(value, ci, mi){
+  state.canvases[ci].modules[mi].tags = value.trim().split(/\s+/).filter(Boolean);
+  reflowAll();
+}
+
+function refreshModuleDOM(ci, mi){
+  const el = document.getElementById(`mod-${ci}-${mi}`);
+  if(!el) return;
+  const mod = state.canvases[ci].modules[mi];
+  const isSelected = state.selectedModule && state.selectedModule.canvasIdx===ci && state.selectedModule.modIdx===mi;
+  el.className = `mod-block ${isSelected?'selected':''}`;
+  el.innerHTML = `<div class="mod-drag-handle" title="拖拽排序">⠿</div>${renderModuleContent(mod, ci, mi)}`;
+  bindDrag(el, ci, mi);
+}
+
+function rtCmd(cmd){ document.execCommand(cmd, false, null); }
+function rtFontSize(px){ document.execCommand('fontSize', false, '7'); document.querySelectorAll('font[size="7"]').forEach(el=>{ el.removeAttribute('size'); el.style.fontSize = px+'px'; }); }
+function rtColor(c){ document.execCommand('foreColor', false, c); }
+function escAttr(s){ return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ═══════════════════════════════
+//  TABS
+// ═══════════════════════════════
+function switchTab(name, tabEl){
+  document.querySelectorAll('.stab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.sidebar-panel').forEach(p=>p.classList.remove('active'));
+  if(tabEl) tabEl.classList.add('active');
+  const panel = document.getElementById(`tab-${name}`);
+  if(panel) panel.classList.add('active');
+}
+
+// ═══════════════════════════════
+//  EXPORT PNG
+// ═══════════════════════════════
+async function exportCurrentPNG(){
+  const ci = state.activeCanvas;
+  await exportCanvasPNG(ci);
+}
+
+async function exportAllPNG(){
+  for(let i=0;i<state.canvases.length;i++){
+    await exportCanvasPNG(i);
+    await new Promise(r=>setTimeout(r,300));
+  }
+  toast(`✅ 已导出 ${state.canvases.length} 张画布`);
+}
+
+async function exportCanvasPNG(ci){
+  const frame = document.getElementById(`canvas-${ci}`);
+  if(!frame) return;
+  toast('⏳ 正在导出…');
+  try{
+    const canvas = await html2canvas(frame,{
+      scale: 3.312, // 375*3.312 ≈ 1242px
+      useCORS: true,
+      backgroundColor: '#ffffff',
+      logging: false,
+    });
+    const link = document.createElement('a');
+    link.download = `BOND_画布${ci+1}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    toast(`✅ 画布 ${ci+1} 已导出`);
+  }catch(e){
+    toast('❌ 导出失败，请检查图片跨域');
+  }
+}
+
+// ═══════════════════════════════
+//  EXPORT HTML (公众号)
+// ═══════════════════════════════
+function generateInlineHTML(){
+  // Build fully inlined HTML for all canvases stacked vertically
+  const canvasHTML = state.canvases.map(canvas=>{
+    const modulesHTML = canvas.modules.map(mod=>inlineModuleHTML(mod)).join('');
+    return `<div style="width:100%;max-width:600px;margin:0 auto;;font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;">${modulesHTML}</div>`;
+  }).join('\n<div style="height:16px;"></div>\n');
+  return `<page>\n${canvasHTML}\n</page>`;
+}
+
+function inlineModuleHTML(mod){
+  switch(mod.type){
+    case 'cover': return inlineCover(mod);
+    case 'imgtext': return inlineImgText(mod);
+    case 'text': return inlineText(mod);
+    case 'event': return inlineEvent(mod);
+    case 'divider': return inlineDivider(mod);
+    case 'table': return inlineTable(mod);
+    case 'checklist': return inlineChecklist(mod);
+    case 'cta': return inlineCta(mod);
+    default: return '';
+  }
+}
+
+function inlineCover(m){
+  const bg = m.bgImage
+    ? `background-image:url('${m.bgImage}');background-size:cover;background-position:center;`
+    : `background:${m.bgColor||'#42aadf'};`;
+  return `<div style="position:relative;width:100%;padding-bottom:133%;${bg}overflow:hidden;">
+    ${m.bgImage?`<div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.55) 0%,transparent 60%);"></div>`:''}
+    ${m.showLogo?`<div style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,.25);color:white;font-size:11px;font-weight:600;padding:4px 10px;border-radius:100px;letter-spacing:.04em;">BOND</div>`:''}
+    <div style="position:absolute;bottom:0;left:0;right:0;padding:32px 24px;text-align:center;">
+      ${m.tag?`<div style="display:inline-block;background:rgba(255,255,255,.2);color:white;font-size:11px;padding:4px 12px;border-radius:100px;margin-bottom:12px;letter-spacing:.06em;">${m.tag}</div><br/>`:''}
+      <div style="color:white;font-size:26px;font-weight:700;line-height:1.2;margin-bottom:6px;">${m.title||'标题'}</div>
+      ${m.subtitle?`<div style="color:rgba(255,255,255,.8);font-size:13px;line-height:1.5;">${m.subtitle}</div>`:''}
+    </div>
+  </div>`;
+}
+
+function inlineImgText(m){
+  if(m.layout==='left'){
+    return `<div style="padding:20px;display:flex;gap:14px;align-items:flex-start;">
+      ${m.image?`<div style="width:44%;flex-shrink:0;"><img src="${m.image}" style="width:100%;border-radius:8px;display:block;" alt=""/></div>`:''}
+      <div style="flex:1;">
+        ${m.title?`<div style="font-size:15px;font-weight:700;color:#1d2129;margin-bottom:6px;">${m.title}</div>`:''}
+        <div style="font-size:13px;color:#86909c;line-height:1.7;">${m.body||''}</div>
+      </div>
+    </div>`;
+  }
+  return `<div style="padding:20px;">
+    ${m.image?`<img src="${m.image}" style="width:100%;border-radius:8px;display:block;margin-bottom:14px;" alt=""/>`:''}
+    ${m.title?`<div style="font-size:15px;font-weight:700;color:#1d2129;margin-bottom:6px;">${m.title}</div>`:''}
+    <div style="font-size:13px;color:#86909c;line-height:1.7;">${m.body||''}</div>
+  </div>`;
+}
+
+function inlineText(m){
+  const styles = {
+    normal: 'padding:20px 24px;',
+    title: 'padding:24px 24px 8px;',
+    quote: 'padding:20px 20px 20px 28px;border-left:4px solid #42aadf;background:#e2f4fe;',
+    highlight: 'padding:18px 20px;background:#fff4ae;',
+  };
+  const contentStyles = {
+    normal: 'font-size:13.5px;line-height:1.75;color:#86909c;',
+    title: 'font-size:19px;font-weight:700;color:#1d2129;line-height:1.3;',
+    quote: 'font-size:13.5px;line-height:1.75;color:#42aadf;font-style:italic;',
+    highlight: 'font-size:13.5px;line-height:1.75;color:#86909c;',
+  };
+  const s = m.style||'normal';
+  return `<div style="${styles[s]||styles.normal}"><div style="${contentStyles[s]||contentStyles.normal}">${m.content||''}</div></div>`;
+}
+
+function inlineEvent(m){
+  return `<div style="padding:16px 20px;">
+    <div style="background:linear-gradient(135deg,#e2f4fe 0%,#ffffff 100%);border:1.5px solid #42aadf;border-radius:12px;overflow:hidden;">
+      <div style="background:#42aadf;padding:14px 18px;display:flex;align-items:center;gap:10px;">
+        <span style="font-size:20px;">🐾</span>
+        <div>
+          <div style="color:white;font-size:15px;font-weight:700;">${m.name||'活动名称'}</div>
+          ${m.tag?`<div style="color:rgba(255,255,255,.8);font-size:11px;margin-top:2px;">${m.tag}</div>`:''}
+        </div>
+      </div>
+      <div style="padding:16px 18px;">
+        ${m.time?`<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;"><span style="font-size:15px;">🕐</span><div><div style="font-size:11px;color:#42aadf;font-weight:600;margin-bottom:2px;">时间</div><div style="font-size:12.5px;color:#86909c;">${m.time}</div></div></div>`:''}
+        ${m.location?`<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;"><span style="font-size:15px;">📍</span><div><div style="font-size:11px;color:#42aadf;font-weight:600;margin-bottom:2px;">地点</div><div style="font-size:12.5px;color:#86909c;">${m.location}</div></div></div>`:''}
+        ${m.price?`<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;"><span style="font-size:15px;">💰</span><div><div style="font-size:11px;color:#42aadf;font-weight:600;margin-bottom:2px;">费用</div><div style="font-size:12.5px;color:#86909c;">${m.price}</div></div></div>`:''}
+        ${m.contact?`<div style="display:flex;align-items:flex-start;gap:10px;"><span style="font-size:15px;">📱</span><div><div style="font-size:11px;color:#42aadf;font-weight:600;margin-bottom:2px;">报名</div><div style="font-size:12.5px;color:#86909c;">${m.contact}</div></div></div>`:''}
+      </div>
+      <div style="padding:0 18px 16px;display:flex;gap:8px;">
+        ${m.btnPrimary?`<div style="flex:1;padding:10px;background:#42aadf;color:white;border-radius:8px;text-align:center;font-size:12.5px;font-weight:600;">${m.btnPrimary}</div>`:''}
+        ${m.btnOutline?`<div style="flex:1;padding:10px;border:1.5px solid #42aadf;color:#42aadf;background:white;border-radius:8px;text-align:center;font-size:12.5px;font-weight:600;">${m.btnOutline}</div>`:''}
+      </div>
+    </div>
+  </div>`;
+}
+
+function inlineDivider(m){
+  const lineStyle = m.style==='thick'?'height:3px;background:#42aadf;border-radius:2px;':m.style==='dots'?'height:0;border-top:2px dashed #c9cdd4;':'height:1px;background:#c9cdd4;';
+  return `<div style="padding:12px 24px;display:flex;align-items:center;justify-content:center;gap:12px;">
+    <div style="flex:1;${lineStyle}"></div>
+    ${m.icon?`<span style="font-size:16px;color:#86909c;">${m.icon}</span>`:''}
+    <div style="flex:1;${lineStyle}"></div>
+  </div>`;
+}
+
+function inlineTable(m){
+  if(!m.headers||!m.rows) return '';
+  return `<div style="padding:16px 20px;overflow-x:auto;">
+    <table style="width:100%;border-collapse:collapse;font-size:12.5px;">
+      <thead><tr>${m.headers.map((h,i)=>`<th style="background:#42aadf;color:white;padding:9px 12px;text-align:left;font-weight:600;font-size:12px;${i===0?'border-radius:8px 0 0 0;':i===m.headers.length-1?'border-radius:0 8px 0 0;':''}">${h}</th>`).join('')}</tr></thead>
+      <tbody>${m.rows.map((row,ri)=>`<tr>${row.map(c=>`<td style="padding:8px 12px;border-bottom:1px solid #c9cdd4;color:#86909c;line-height:1.5;${ri%2===1?'background:rgba(66,170,223,.04);':''}">${c}</td>`).join('')}</tr>`).join('')}</tbody>
+    </table>
+  </div>`;
+}
+
+function inlineChecklist(m){
+  const colors = ['#42aadf','#f35d55','#97d9f9','#ff8800','#ffde00','#86909c'];
+  const bulletMap = {number: i=>i+1, check: ()=>'✓', star: ()=>'★'};
+  const bullet = bulletMap[m.style||'number'];
+  return `<div style="padding:16px 20px;">
+    ${m.title?`<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+      <span style="font-size:20px;">${m.style==='check'?'✅':m.style==='star'?'⭐':'📋'}</span>
+      <div style="font-size:15px;font-weight:700;color:#1d2129;">${m.title}</div>
+    </div>`:''}
+    ${(m.items||[]).map((item,i)=>`
+      <div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid #c9cdd4;">
+        <div style="width:22px;height:22px;border-radius:50%;background:${colors[i%colors.length]};display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:white;flex-shrink:0;margin-top:1px;">${bullet(i)}</div>
+        <div style="font-size:13px;color:#86909c;line-height:1.8;flex:1;">${item.text||''}</div>
+      </div>
+    `).join('')}
+  </div>`;
+}
+
+function inlineCta(m){
+  return `<div style="padding:20px;">
+    <div style="border-radius:12px;padding:20px;text-align:center;background:linear-gradient(135deg,#fff4ae 0%,#fffceb 100%);border:1.5px solid #ff8800;">
+      ${m.emoji?`<div style="font-size:28px;margin-bottom:8px;">${m.emoji}</div>`:''}
+      ${m.title?`<div style="font-size:15px;font-weight:700;color:#1d2129;margin-bottom:6px;">${m.title}</div>`:''}
+      ${m.body?`<div style="font-size:13px;color:#86909c;line-height:1.7;margin-bottom:14px;">${m.body}</div>`:''}
+      ${m.tags&&m.tags.length?`<div style="display:flex;flex-wrap:wrap;justify-content:center;gap:6px;">${m.tags.map(t=>`<span style="padding:5px 12px;border-radius:100px;font-size:12px;font-weight:500;background:white;border:1.5px solid #f35d55;color:#f35d55;">${t}</span>`).join('')}</div>`:''}
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════
+//  MODALS & COPY
+// ═══════════════════════════════
+function showExportModal(){ showHTMLPreview(); }
+
+function showHTMLPreview(){
+  const code = generateInlineHTML();
+  document.getElementById('html-code-output').value = code;
+  document.getElementById('html-modal').classList.add('show');
+}
+
+function closeModal(){
+  document.getElementById('html-modal').classList.remove('show');
+}
+
+function exportHTML(){
+  const code = generateInlineHTML();
+  navigator.clipboard.writeText(code).then(()=>toast('✅ HTML 已复制到剪贴板')).catch(()=>toast('❌ 复制失败，请手动复制'));
+}
+
+function copyHTMLCode(){
+  const ta = document.getElementById('html-code-output');
+  navigator.clipboard.writeText(ta.value).then(()=>toast('✅ 已复制')).catch(()=>{ta.select();document.execCommand('copy');toast('✅ 已复制');});
+}
+
+document.getElementById('html-modal').addEventListener('click', e=>{ if(e.target===e.currentTarget) closeModal(); });
+
+// ═══════════════════════════════
+//  DRAFT SAVE / LOAD
+// ═══════════════════════════════
+function saveDraft(){
+  const json = JSON.stringify({canvases: state.canvases}, null, 2);
+  const blob = new Blob([json], {type:'application/json'});
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `BOND草稿_${new Date().toLocaleDateString('zh-CN').replace(/\//g,'-')}.json`;
+  link.click();
+  toast('✅ 草稿已保存');
+}
+
+function loadDraft(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ev=>{
+    try{
+      const data = JSON.parse(ev.target.result);
+      if(data.canvases && Array.isArray(data.canvases)){
+        state.canvases = data.canvases;
+        state.activeCanvas = 0;
+        state.selectedModule = null;
+        renderCanvasList();
+        renderCanvasArea();
+        renderProps();
+        toast('✅ 草稿已载入');
+      }else{ toast('❌ 文件格式不正确'); }
+    }catch{ toast('❌ 解析失败'); }
+  };
+  reader.readAsText(file);
+  e.target.value='';
+}
+
+// ═══════════════════════════════
+//  TOAST
+// ═══════════════════════════════
+let toastTimer;
+function toast(msg){
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>el.classList.remove('show'), 2200);
+}
+
+// ═══════════════════════════════
+//  BOOT
+// ═══════════════════════════════
+function init(){
+  // 预填示例画布（基于「宠物友好」文章，小红书化版本）
+  state.canvases = [
+    {
+      name: '画布 1',
+      modules: [
+        defaultModule('cover'),
+        {type:'text',style:'title',content:'💥 公园禁入、商场撤标……<br/>毛孩子的出行空间正在缩水'},
+        {type:'divider',style:'line',icon:'🐾'},
+        {type:'imgtext',layout:'top',image:'',title:'上海：宠物友好标识集体消失',body:'兴业太古汇、港汇恒隆一夜撤下标识、拆掉推车租赁点。铲屎官们兴冲冲赶来，却只能在门口遗憾折返。🐶'},
+        {type:'text',style:'quote',content:'除导盲犬外，其他宠物暂时不准入内。'},
+        {type:'imgtext',layout:'top',image:'',title:'北京：史上最严草案来了',body:'商场、公园、地铁<strong>一律禁止携犬</strong>，犬绳不得超过1.5米，违规最高罚款5000元、没收犬只+5年禁养。😨'},
+        {type:'text',style:'title',content:'📊 各城市政策一览'},
+        {type:'table',headers:['城市','宠物进商场','处罚力度'],rows:[['上海','明确禁止（2026修订）','警告+罚款'],['北京','草案拟全面禁入','没收+5年禁养'],['广州','经营者自主决定','无统一规定'],['成都','设专属泊狗位','鼓励规范管理']]},
+        {type:'text',style:'highlight',content:'同样是「宠物友好商场」，在广州合法合规，在上海却可能面临处罚。这种撕裂感，正是我们和毛孩子共同面临的困境。'},
+        {type:'text',style:'title',content:'🤔 为什么突然「不友好」了？'},
+        {type:'text',style:'normal',content:'2025年上半年，全国城市涉犬伤人案件<strong>18.6万起</strong>，同比↑16.8%。其中45%的受害者是未成年人——不是毛孩子的错，但每一起冲突都在无形中关上一扇原本敞开的门。'},
+        {type:'divider',style:'dots',icon:''},
+        {type:'text',style:'quote',content:'商场收到大量投诉：小孩被大狗吓哭、随地大小便、狗狗打架惊扰顾客……夹在养宠人与非养宠人之间，左右为难。'},
+        {type:'text',style:'normal',content:'真正让「宠物友好」空间被压缩的，不是毛孩子本身，而是<strong>少数缺乏边界感的养宠方式</strong>，透支了社会的包容度。'},
+        {type:'text',style:'title',content:'🐾 养宠人，我们能做什么？'},
+        {type:'checklist',style:'number',title:'带毛孩子看世界的温柔契约',items:[
+          {text:'<strong>参与发声</strong> · 北京草案征集意见截至5月7日，为毛孩子争取合规奔跑空间'},
+          {text:'<strong>牵好绳、捡好便</strong> · 每次文明举动都是为公共空间投票'},
+          {text:'<strong>用脚投票</strong> · 选择真正投入资源、用心打造宠物友好环境的商场'},
+          {text:'<strong>善用工具</strong> · BOND持续更新全国宠物友好场所地图，让每次出行不再迷茫'},
+        ]},
+        {type:'divider',style:'thick',icon:''},
+        {type:'text',style:'highlight',content:'济南经验：实施养犬积分制后，「犬只不拴绳」投诉下降43%，伤人投诉下降65%。规则不是束缚，是保护。🐕'},
+        {type:'text',style:'title',content:'✨ 友好没有结束，只是在进化'},
+        {type:'text',style:'normal',content:'上海苏河湾万象天地、前滩太古里——室内收紧，室外保持开放，宠物推车、饮水点一个不少。成都「泊狗位」更是配备遮阳棚、饮水机，对面咖啡店还送宠物专用奶油。☕🐾\n\n从「禁止入内」到「欢迎停靠」，这才是宠物友好应有的进化路径。'},
+        {type:'divider',style:'line',icon:'🐾'},
+        defaultModule('cta'),
+      ]
+    }
+  ];
+  state.activeCanvas = 0;
+  reflowAll();
+}
+
+init();
+</script>
+</body>
+</html>
